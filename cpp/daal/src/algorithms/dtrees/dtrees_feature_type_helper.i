@@ -194,6 +194,7 @@ template <typename IndexType, typename algorithmFPType, CpuType cpu>
 services::Status ColIndexTaskBins<IndexType, algorithmFPType, cpu>::makeIndex(NumericTable & nt, IndexedFeatures::FeatureEntry & entry,
                                                                               IndexType * aRes, size_t iCol, size_t nRows, bool bUnorderedFeature)
 {
+    _prm.maxBins = 250;
     if (bUnorderedFeature || nRows <= _prm.maxBins) return this->makeIndexDefault(nt, entry, aRes, iCol, nRows, bUnorderedFeature);
 
     Status s = this->getSorted(nt, iCol, nRows);
