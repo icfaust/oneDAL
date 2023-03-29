@@ -128,7 +128,7 @@ private:
     services::Status assignIndexAccordingToBins(IndexedFeatures::FeatureEntry & entry, IndexType * aRes, size_t nBins, size_t nRows);
 
 private:
-    const BinParams _prm;
+    BinParams _prm;
     TVector<size_t, cpu, DefaultAllocator<cpu> > _bins;
 };
 
