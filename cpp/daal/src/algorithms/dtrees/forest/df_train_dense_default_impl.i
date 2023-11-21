@@ -384,7 +384,7 @@ services::Status computeImpl(HostAppIface * pHostApp, const NumericTable * x, co
     const size_t nCols = x->getNumberOfColumns();
     TVector<BinIndexType, cpu, ScalableAllocator<cpu> > binIndexVector;
     BinIndexType * binIndex = nullptr;
-    int burn                = 400; //magic number for MT2203 samples
+    int burn                = 40000; //magic number for MT2203 samples
 
     if (indexedFeatures)
     {
