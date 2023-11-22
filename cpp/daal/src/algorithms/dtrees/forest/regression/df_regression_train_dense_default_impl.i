@@ -30,6 +30,7 @@
 #include "src/algorithms/dtrees/forest/regression/df_regression_model_impl.h"
 #include "src/algorithms/dtrees/dtrees_predict_dense_default_impl.i"
 #include "src/algorithms/dtrees/forest/regression/df_regression_training_types_result.h"
+#include <iostream>
 
 namespace daal
 {
@@ -864,6 +865,7 @@ size_t OrderedRespHelperRandom<algorithmFPType, cpu>::genRandomBinIdx(const Inde
     size_t idx = maxidx;
     RNGsInst<algorithmFPType, cpu> rng;
     rng.uniform(1, &fidx, this->engineImpl->getState(), minval, maxval); //find random index between minidx and maxidx
+    std::cout << minidx << maxidx << fidx;
 
     while (l < idx)
     {
