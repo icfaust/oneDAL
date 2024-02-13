@@ -455,7 +455,7 @@ CORE.srcdirs  := $(CORE.SERV.srcdir) $(CORE.srcdir)                  \
                  $(CPPDIR.daal)/src/data_management
 
 CORE.incdirs.common := $(RELEASEDIR.include) $(CPPDIR.daal) $(WORKDIR)
-CORE.incdirs.thirdp := $(daaldep.math_backend.incdir) $(TBBDIR.include) $(X86SIMDSORT.include)
+CORE.incdirs.thirdp := $(daaldep.math_backend.incdir) $(TBBDIR.include) $(X86SORTDIR.include)
 CORE.incdirs := $(CORE.incdirs.common) $(CORE.incdirs.thirdp)
 
 containing = $(foreach v,$2,$(if $(findstring $1,$v),$v))
