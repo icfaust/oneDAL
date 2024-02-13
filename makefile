@@ -291,6 +291,10 @@ mklgpufpk.HEADERS := $(MKLGPUFPKDIR.include)/mkl_dal_sycl.hpp $(MKLGPUFPKDIR.inc
 
 include dev/make/deps.$(BACKEND_CONFIG).mk
 
+#============================= x86-simd-sort folders =====================================
+X86SORTDIR := $(if $(wildcard $(DIR)/__deps/x86-simd-sort/$(_OS)/*),$(DIR)/__deps/x86-simd-sort/$(_OS),$(subst \,/,$(SIMDSORTROOT)))
+X86SORTDIR.include := $(X86SORTDIR)/src
+
 
 #============================= oneAPI folders =====================================
 ifeq ($(if $(or $(OS_is_lnx),$(OS_is_win)),yes,),yes)
@@ -451,7 +455,7 @@ CORE.srcdirs  := $(CORE.SERV.srcdir) $(CORE.srcdir)                  \
                  $(CPPDIR.daal)/src/data_management
 
 CORE.incdirs.common := $(RELEASEDIR.include) $(CPPDIR.daal) $(WORKDIR)
-CORE.incdirs.thirdp := $(daaldep.math_backend.incdir) $(TBBDIR.include)
+CORE.incdirs.thirdp := $(daaldep.math_backend.incdir) $(TBBDIR.include) $(X86SIMDSORT.include)
 CORE.incdirs := $(CORE.incdirs.common) $(CORE.incdirs.thirdp)
 
 containing = $(foreach v,$2,$(if $(findstring $1,$v),$v))
