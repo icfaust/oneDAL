@@ -30,6 +30,17 @@
 
 #if defined(DAAL_INTEL_CPP_COMPILER)
     #include <immintrin.h>
+
+    #if defined(__AVX2__)
+        #include <avx2-32bit-qsort.hpp>
+        #include <avx2-64bit-qsort.hpp>
+    #endif
+
+    #if defined(__AVX512__)
+        #include <avx512-32bit-qsort.hpp>
+        #include <avx512-64bit-qsort.hpp>
+    #endif
+
 #endif
 
 namespace daal
@@ -137,6 +148,39 @@ void qSort(size_t n, algorithmDataType * x)
         }
     }
 }
+
+#if defined(DAAL_INTEL_CPP_COMPILER)
+
+    #if defined(__AVX2__)
+
+template <>
+void qSort<float, AVX2>(size_t n, float * x)
+{
+    return qSort(x, n)
+}
+
+template <>
+void qSort<double, AVX2>(size_t n, double * x)
+{
+    return qSort(x, n)
+}
+    #endif
+
+    #if defined(__AVX512__)
+template <>
+void qSort<float, AVX512>(size_t n, float * x)
+{
+    return qSort(x, n)
+}
+
+template <>
+void qSort<double, AVX512>(size_t n, double * x)
+{
+    return qSort(x, n)
+}
+    #endif
+
+#endif
 
 /**
  * \brief Quick sort function that sorts array x
