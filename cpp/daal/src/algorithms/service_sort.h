@@ -156,13 +156,13 @@ void qSort(size_t n, algorithmDataType * x)
 template <>
 void qSort<float, AVX2>(size_t n, float * x)
 {
-    return qSort(x, n)
+    return avx2_qsort(x, n)
 }
 
 template <>
 void qSort<double, AVX2>(size_t n, double * x)
 {
-    return qSort(x, n)
+    return avx2_qsort(x, n)
 }
     #endif
 
@@ -170,13 +170,13 @@ void qSort<double, AVX2>(size_t n, double * x)
 template <>
 void qSort<float, AVX512>(size_t n, float * x)
 {
-    return qSort(x, n)
+    return avx512_qsort(x, n)
 }
 
 template <>
 void qSort<double, AVX512>(size_t n, double * x)
 {
-    return qSort(x, n)
+    return avx512_qsort(x, n)
 }
     #endif
 
