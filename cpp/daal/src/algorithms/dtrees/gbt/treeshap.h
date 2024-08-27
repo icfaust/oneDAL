@@ -55,7 +55,6 @@ namespace gbt
 namespace treeshap
 {
 using gbt::internal::FeatureIndexType;
-using gbt::internal::ModelFPType;
 using FeatureTypes = algorithms::dtrees::internal::FeatureTypes;
 
 /**
@@ -102,10 +101,10 @@ inline void treeShap(const gbt::internal::GbtDecisionTree * tree, const algorith
     // stop if we have no weight coming down to us
     if (conditionFraction < FLT_EPSILON) return;
 
-    const ModelFPType * const splitValues     = tree->getSplitPoints() - 1;
-    const FeatureIndexType * const fIndexes   = tree->getFeatureIndexesForSplit() - 1;
-    const ModelFPType * const nodeCoverValues = tree->getNodeCoverValues() - 1;
-    const int * const defaultLeft             = tree->getDefaultLeftForSplit() - 1;
+    const algorithmFPType * const splitValues     = tree->getSplitPoints() - 1;
+    const FeatureIndexType * const fIndexes       = tree->getFeatureIndexesForSplit() - 1;
+    const algorithmFPType * const nodeCoverValues = tree->getNodeCoverValues() - 1;
+    const int * const defaultLeft                 = tree->getDefaultLeftForSplit() - 1;
 
     PathElement * uniquePath = parentUniquePath + uniqueDepth + 1;
     const size_t nBytes      = (uniqueDepth + 1) * sizeof(PathElement);
@@ -245,11 +244,11 @@ inline void treeShap(const gbt::internal::GbtDecisionTree * tree, const algorith
     // stop if we have no weight coming down to us
     if (conditionFraction < FLT_EPSILON) return;
 
-    const size_t numOutputs                   = 1; // currently only support single-output models
-    const ModelFPType * const splitValues     = tree->getSplitPoints() - 1;
-    const int * const defaultLeft             = tree->getDefaultLeftForSplit() - 1;
-    const FeatureIndexType * const fIndexes   = tree->getFeatureIndexesForSplit() - 1;
-    const ModelFPType * const nodeCoverValues = tree->getNodeCoverValues() - 1;
+    const size_t numOutputs                       = 1; // currently only support single-output models
+    const algorithmFPType * const splitValues     = tree->getSplitPoints() - 1;
+    const int * const defaultLeft                 = tree->getDefaultLeftForSplit() - 1;
+    const FeatureIndexType * const fIndexes       = tree->getFeatureIndexesForSplit() - 1;
+    const algorithmFPType * const nodeCoverValues = tree->getNodeCoverValues() - 1;
 
     // extend the unique path
     PathElement * uniquePath = parentUniquePath + uniqueDepth + 1;

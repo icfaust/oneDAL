@@ -345,8 +345,8 @@ public:
         TableRecordType ** sons    = sonsArr.data();
         TableRecordType ** parents = parentsArr.data();
 
-        gbt::internal::ModelFPType * const splitPoints         = tree->getSplitPoints();
-        gbt::internal::FeatureIndexType * const featureIndexes = tree->getFeatureIndexesForSplit();
+        algorithmFPType * const splitPoints    = tree->getSplitPoints();
+        algorithmFPType * const featureIndexes = tree->getFeatureIndexesForSplit();
 
         for (size_t i = 0; i < nNodes; ++i)
         {

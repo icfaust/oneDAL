@@ -45,7 +45,6 @@ namespace prediction
 {
 namespace internal
 {
-using gbt::internal::ModelFPType;
 using gbt::internal::FeatureIndexType;
 
 template <bool hasUnorderedFeatures, bool hasAnyMissing>
@@ -55,22 +54,25 @@ struct PredictDispatcher
 };
 
 template <typename algorithmFPType>
-inline FeatureIndexType updateIndex(FeatureIndexType idx, algorithmFPType valueFromDataSet, const ModelFPType * splitPoints, const int * defaultLeft,
-                                    const FeatureTypes & featTypes, FeatureIndexType splitFeature, const PredictDispatcher<false, false> & dispatcher)
+inline FeatureIndexType updateIndex(FeatureIndexType idx, algorithmFPType valueFromDataSet, const algorithmFPType * splitPoints,
+                                    const int * defaultLeft, const FeatureTypes & featTypes, FeatureIndexType splitFeature,
+                                    const PredictDispatcher<false, false> & dispatcher)
 {
     return idx * 2 + (valueFromDataSet > splitPoints[idx]);
 }
 
 template <typename algorithmFPType>
-inline FeatureIndexType updateIndex(FeatureIndexType idx, algorithmFPType valueFromDataSet, const ModelFPType * splitPoints, const int * defaultLeft,
-                                    const FeatureTypes & featTypes, FeatureIndexType splitFeature, const PredictDispatcher<true, false> & dispatcher)
+inline FeatureIndexType updateIndex(FeatureIndexType idx, algorithmFPType valueFromDataSet, const algorithmFPType * splitPoints,
+                                    const int * defaultLeft, const FeatureTypes & featTypes, FeatureIndexType splitFeature,
+                                    const PredictDispatcher<true, false> & dispatcher)
 {
     return idx * 2 + (featTypes.isUnordered(splitFeature) ? valueFromDataSet != splitPoints[idx] : valueFromDataSet > splitPoints[idx]);
 }
 
 template <typename algorithmFPType>
-inline FeatureIndexType updateIndex(FeatureIndexType idx, algorithmFPType valueFromDataSet, const ModelFPType * splitPoints, const int * defaultLeft,
-                                    const FeatureTypes & featTypes, FeatureIndexType splitFeature, const PredictDispatcher<false, true> & dispatcher)
+inline FeatureIndexType updateIndex(FeatureIndexType idx, algorithmFPType valueFromDataSet, const algorithmFPType * splitPoints,
+                                    const int * defaultLeft, const FeatureTypes & featTypes, FeatureIndexType splitFeature,
+                                    const PredictDispatcher<false, true> & dispatcher)
 {
     if (checkFinitenessByComparison(valueFromDataSet))
     {
@@ -83,8 +85,9 @@ inline FeatureIndexType updateIndex(FeatureIndexType idx, algorithmFPType valueF
 }
 
 template <typename algorithmFPType>
-inline FeatureIndexType updateIndex(FeatureIndexType idx, algorithmFPType valueFromDataSet, const ModelFPType * splitPoints, const int * defaultLeft,
-                                    const FeatureTypes & featTypes, FeatureIndexType splitFeature, const PredictDispatcher<true, true> & dispatcher)
+inline FeatureIndexType updateIndex(FeatureIndexType idx, algorithmFPType valueFromDataSet, const algorithmFPType * splitPoints,
+                                    const int * defaultLeft, const FeatureTypes & featTypes, FeatureIndexType splitFeature,
+                                    const PredictDispatcher<true, true> & dispatcher)
 {
     if (checkFinitenessByComparison(valueFromDataSet))
     {
@@ -100,7 +103,7 @@ template <typename algorithmFPType, typename DecisionTreeType, CpuType cpu, bool
 inline void predictForTreeVector(const DecisionTreeType & t, const FeatureTypes & featTypes, const algorithmFPType * x, algorithmFPType v[],
                                  const PredictDispatcher<hasUnorderedFeatures, hasAnyMissing> & dispatcher)
 {
-    const ModelFPType * const values        = t.getSplitPoints() - 1;
+    const algorithmFPType * const values    = t.getSplitPoints() - 1;
     const FeatureIndexType * const fIndexes = t.getFeatureIndexesForSplit() - 1;
     const int * const defaultLeft           = t.getDefaultLeftForSplit() - 1;
     const FeatureIndexType nFeat            = featTypes.getNumberOfFeatures();
@@ -134,7 +137,7 @@ template <typename algorithmFPType, typename DecisionTreeType, CpuType cpu, bool
 inline algorithmFPType predictForTree(const DecisionTreeType & t, const FeatureTypes & featTypes, const algorithmFPType * x,
                                       const PredictDispatcher<hasUnorderedFeatures, hasAnyMissing> & dispatcher)
 {
-    const ModelFPType * const values        = (const ModelFPType *)t.getSplitPoints() - 1;
+    const algorithmFPType * const values    = (const algorithmFPType *)t.getSplitPoints() - 1;
     const FeatureIndexType * const fIndexes = t.getFeatureIndexesForSplit() - 1;
     const int * const defaultLeft           = t.getDefaultLeftForSplit() - 1;
 
@@ -175,7 +178,7 @@ struct TileDimensions
     {
         // Use smaller vectorBlockSize if trees fit to L2
         // Each node contain 3 values
-        size_t nodesSize               = (sizeof(ModelFPType) + sizeof(FeatureIndexType) + sizeof(int)) * nNodes;
+        size_t nodesSize               = (sizeof(algorithmFPType) + sizeof(FeatureIndexType) + sizeof(int)) * nNodes;
         const bool treesFitToL2        = nodesSize < daal::services::internal::getL2CacheSize();
         size_t flexibleBlockSizeFactor = treesFitToL2 ? optimalBlockSizeFactor : maxVectorBlockSizeFactor;
 

@@ -29,10 +29,10 @@ GbtDecisionTree prepareThreeNodeTree()
      */
     GbtDecisionTree tree = GbtDecisionTree(3, 2);
 
-    ModelFPType * splitPoints       = tree.getSplitPoints();
+    auto * splitPoints              = tree.getSplitPoints();
     FeatureIndexType * splitIndices = tree.getFeatureIndexesForSplit();
     int * defaultLeft               = tree.getDefaultLeftForSplit();
-    ModelFPType * coverValues       = tree.getNodeCoverValues();
+    auto * coverValues              = tree.getNodeCoverValues();
 
     splitPoints[0]  = 1;
     splitIndices[0] = 0;
@@ -64,10 +64,10 @@ GbtDecisionTree prepareFiveNodeTree()
      */
     GbtDecisionTree tree = GbtDecisionTree(5, 3);
 
-    ModelFPType * splitPoints       = tree.getSplitPoints();
+    auto * splitPoints              = tree.getSplitPoints();
     FeatureIndexType * splitIndices = tree.getFeatureIndexesForSplit();
     int * defaultLeft               = tree.getDefaultLeftForSplit();
-    ModelFPType * coverValues       = tree.getNodeCoverValues();
+    auto * coverValues              = tree.getNodeCoverValues();
 
     // node idx 1
     splitPoints[0]  = 1;

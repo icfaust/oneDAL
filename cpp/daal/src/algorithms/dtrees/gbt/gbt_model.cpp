@@ -62,7 +62,7 @@ void ModelImpl::traverseDF(size_t iTree, algorithms::regression::TreeNodeVisitor
 
     const GbtDecisionTree & gbtTree = *at(iTree);
 
-    const ModelFPType * splitPoints        = gbtTree.getSplitPoints();
+    const auto * splitPoints               = gbtTree.getSplitPoints();
     const FeatureIndexType * splitFeatures = gbtTree.getFeatureIndexesForSplit();
 
     auto onSplitNodeFunc = [&splitPoints, &splitFeatures, &visitor](size_t iRowInTable, size_t level) -> bool {
@@ -82,7 +82,7 @@ void ModelImpl::traverseBF(size_t iTree, algorithms::regression::TreeNodeVisitor
 
     const GbtDecisionTree & gbtTree = *at(iTree);
 
-    const ModelFPType * splitPoints        = gbtTree.getSplitPoints();
+    const auto * splitPoints               = gbtTree.getSplitPoints();
     const FeatureIndexType * splitFeatures = gbtTree.getFeatureIndexesForSplit();
 
     auto onSplitNodeFunc = [&splitFeatures, &splitPoints, &visitor](size_t iRowInTable, size_t level) -> bool {
@@ -107,7 +107,7 @@ void ModelImpl::traverseBFS(size_t iTree, tree_utils::regression::TreeNodeVisito
 
     const GbtDecisionTree & gbtTree = *at(iTree);
 
-    const ModelFPType * splitPoints        = gbtTree.getSplitPoints();
+    const auto * splitPoints               = gbtTree.getSplitPoints();
     const FeatureIndexType * splitFeatures = gbtTree.getFeatureIndexesForSplit();
     const int * nodeSamplesCount           = getNodeSampleCount(iTree);
     const double * imp                     = getImpVals(iTree);
@@ -147,7 +147,7 @@ void ModelImpl::traverseDFS(size_t iTree, tree_utils::regression::TreeNodeVisito
 
     const GbtDecisionTree & gbtTree = *at(iTree);
 
-    const ModelFPType * splitPoints        = gbtTree.getSplitPoints();
+    const auto * splitPoints               = gbtTree.getSplitPoints();
     const FeatureIndexType * splitFeatures = gbtTree.getFeatureIndexesForSplit();
     const int * nodeSamplesCount           = getNodeSampleCount(iTree);
     const double * imp                     = getImpVals(iTree);
@@ -228,7 +228,7 @@ void ModelImpl::destroy()
 bool ModelImpl::nodeIsDummyLeaf(size_t nodeIndex, const GbtDecisionTree & gbtTree)
 {
     const size_t childArrayIndex           = nodeIndex - 1;
-    const ModelFPType * splitPoints        = gbtTree.getSplitPoints();
+    const auto * splitPoints               = gbtTree.getSplitPoints();
     const FeatureIndexType * splitFeatures = gbtTree.getFeatureIndexesForSplit();
 
     if (childArrayIndex)
@@ -272,9 +272,9 @@ void ModelImpl::decisionTreeToGbtTree(const DecisionTreeTable & tree, GbtDecisio
     NodeType * sons    = sonsArr.data();
     NodeType * parents = parentsArr.data();
 
-    ModelFPType * const splitPoints         = newTree.getSplitPoints();
+    auto * const splitPoints                = newTree.getSplitPoints();
     FeatureIndexType * const featureIndexes = newTree.getFeatureIndexesForSplit();
-    ModelFPType * const nodeCoverValues     = newTree.getNodeCoverValues();
+    auto * const nodeCoverValues            = newTree.getNodeCoverValues();
     int * const defaultLeft                 = newTree.getDefaultLeftForSplit();
 
     for (size_t i = 0; i < nSourceNodes; ++i)

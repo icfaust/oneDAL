@@ -41,7 +41,6 @@ namespace gbt
 namespace internal
 {
 typedef uint32_t FeatureIndexType;
-typedef float ModelFPType;
 typedef services::Collection<size_t> NodeIdxArray;
 
 static inline size_t getNumberOfNodesByLvls(const size_t nLvls)
@@ -57,12 +56,13 @@ void swap(T & t1, T & t2)
     t2    = tmp;
 }
 
+template <typename algorithmFPType>
 class GbtDecisionTree : public SerializationIface
 {
 public:
     DECLARE_SERIALIZABLE();
-    using SplitPointType             = HomogenNumericTable<ModelFPType>;
-    using NodeCoverType              = HomogenNumericTable<ModelFPType>;
+    using SplitPointType             = HomogenNumericTable<algorithmFPType>;
+    using NodeCoverType              = HomogenNumericTable<algorithmFPType>;
     using FeatureIndexesForSplitType = HomogenNumericTable<FeatureIndexType>;
     using defaultLeftForSplitType    = HomogenNumericTable<int>;
 
@@ -81,19 +81,19 @@ public:
     // for serialization only
     GbtDecisionTree() : _nNodes(0), _maxLvl(0) {}
 
-    ModelFPType * getSplitPoints() { return _splitPoints->getArray(); }
+    algorithmFPType * getSplitPoints() { return _splitPoints->getArray(); }
 
     FeatureIndexType * getFeatureIndexesForSplit() { return _featureIndexes->getArray(); }
 
     int * getDefaultLeftForSplit() { return _defaultLeft->getArray(); }
 
-    const ModelFPType * getSplitPoints() const { return _splitPoints->getArray(); }
+    const algorithmFPType * getSplitPoints() const { return _splitPoints->getArray(); }
 
     const FeatureIndexType * getFeatureIndexesForSplit() const { return _featureIndexes->getArray(); }
 
-    ModelFPType * getNodeCoverValues() { return _nodeCoverValues->getArray(); }
+    algorithmFPType * getNodeCoverValues() { return _nodeCoverValues->getArray(); }
 
-    const ModelFPType * getNodeCoverValues() const { return _nodeCoverValues->getArray(); }
+    const algorithmFPType * getNodeCoverValues() const { return _nodeCoverValues->getArray(); }
 
     const int * getDefaultLeftForSplit() const { return _defaultLeft->getArray(); }
 
@@ -131,7 +131,7 @@ public:
 
         int result = 0;
 
-        ModelFPType * const splitPoints         = tree->getSplitPoints();
+        algorithmFPType * const splitPoints     = tree->getSplitPoints();
         FeatureIndexType * const featureIndexes = tree->getFeatureIndexesForSplit();
 
         for (size_t i = 0; i < nNodes; ++i)
