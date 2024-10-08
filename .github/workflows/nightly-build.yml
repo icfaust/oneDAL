@@ -57,7 +57,7 @@ jobs:
           .ci/scripts/build.sh --compiler icx  --optimizations avx2 --target onedal
       - name: Compress build
         run: |
-          tar -cvzf __release_lnx.tar.gz .\__release_lnx
+          tar -cvzf __release_lnx.tar.gz __release_lnx
       - name: Archive build
         uses: actions/upload-artifact@v4
         with:
@@ -116,8 +116,8 @@ jobs:
       - name: Compress build
         shell: cmd
         run: |
-          ren .\__release_win_vc .\__release_win
-          tar -cvzf __release_win.tar.gz .\__release_win
+          ren __release_win_vc __release_win
+          tar -cvzf __release_win.tar.gz __release_win
       - name: Archive build
         uses: actions/upload-artifact@v4
         with:
