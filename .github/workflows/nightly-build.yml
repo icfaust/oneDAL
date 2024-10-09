@@ -112,11 +112,8 @@ jobs:
       - name: Compress Intel BaseKit
         shell: cmd
         run: |
-          # change absolute symlinks to relative symlinks for reuse (BaseKit bug)
-          for /f "tokens=2 delims=[]" %%H in  ('dir /al .\oneapi\compiler\ ^| findstr /i /c:"latest"') do for %%f in ("%%H") do set "target=%%~nxf"
-          rmdir .\oneapi\compiler\latest
-          mklink /D .\oneapi\compiler\latest .\%target%
-          dir .\oneapi\compiler
+          # change absolute symlinks to relative symlinks for reuse (fix issue in Intel BaseKit)
+          for /D %%s in (.\oneapi\*) do for /f "tokens=2 delims=[]" %%H in ('dir /al %%s\ ^| findstr /i /c:"latest"') do rmdir %%s\latest & mklink /D %%s\latest .\%%~nxH
           tar -cvzf oneapi.tar.gz .\oneapi
       - name: Compress build
         shell: cmd
