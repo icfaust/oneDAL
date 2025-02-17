@@ -31,6 +31,7 @@ ALGOS = [
     "objective_function",
     "pca",
     "polynomial_kernel",
+    "roc_auc_score",
     "rbf_kernel",
     "sigmoid_kernel",
     "shortest_paths",
