@@ -46,7 +46,7 @@ env:
 jobs:
   build_lnx:
     name: oneDAL Linux nightly build
-    if: github.repository == 'uxlfoundation/oneDAL'
+    if: github.repository == 'icfaust/oneDAL'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
 
@@ -82,7 +82,7 @@ jobs:
 
   build_win:
     name: oneDAL Windows nightly build
-    if: github.repository == 'uxlfoundation/oneDAL'
+    if: github.repository == 'icfaust/oneDAL'
     runs-on: windows-2025
     timeout-minutes: 120
 
