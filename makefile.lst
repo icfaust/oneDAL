@@ -187,7 +187,6 @@ ONEAPI.ALGOS :=          \
     decision_forest      \
     decision_tree        \
     finiteness_checker   \
-    roc_auc_score        \
     kmeans               \
     kmeans_init          \
     knn                  \
@@ -203,6 +202,7 @@ ONEAPI.ALGOS :=          \
     polynomial_kernel    \
     sigmoid_kernel       \
     rbf_kernel           \
+    roc_auc_score        \
     svm                  \
     jaccard              \
     triangle_counting    \
