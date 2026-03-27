@@ -69,3 +69,4 @@
 #include "oneapi/dal/algo/triangle_counting.hpp"
 #include "oneapi/dal/algo/basic_statistics.hpp"
 #include "oneapi/dal/algo/finiteness_checker.hpp"
+#include "oneapi/dal/algo/roc_auc_score.hpp"

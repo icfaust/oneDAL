@@ -21,6 +21,7 @@ ALGOS = [
     "dbscan",
     "decision_tree",
     "finiteness_checker",
+    "roc_auc_score",
     "jaccard",
     "kmeans",
     "kmeans_init",

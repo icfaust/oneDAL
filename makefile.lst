@@ -187,6 +187,7 @@ ONEAPI.ALGOS :=          \
     decision_forest      \
     decision_tree        \
     finiteness_checker   \
+    roc_auc_score        \
     kmeans               \
     kmeans_init          \
     knn                  \
