@@ -18,6 +18,9 @@
 #include "oneapi/dal/detail/error_messages.hpp"
 #include "oneapi/dal/exceptions.hpp"
 
+#include "oneapi/dal/backend/primitives/sort.hpp"
+#include "oneapi/dal/backend/primitives/placement.hpp"
+
 namespace oneapi::dal::roc_auc_score::backend {
 
 using dal::backend::context_gpu;
