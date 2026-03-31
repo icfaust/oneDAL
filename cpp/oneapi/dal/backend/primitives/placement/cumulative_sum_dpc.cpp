@@ -104,6 +104,8 @@ sycl::event cumulative_sum_1d(sycl::queue& queue, ndview<Type, 1>& data, const e
 
 INSTANTIATE(float)
 INSTANTIATE(double)
+INSTANTIATE(std::uint32_t)
+
 
 #undef INSTANTIATE
 
@@ -194,6 +196,8 @@ sycl::event distribute_sum(sycl::queue& queue,
 
 INSTANTIATE(float)
 INSTANTIATE(double)
+INSTANTIATE(std::uint32_t)
+
 
 #undef INSTANTIATE
 
