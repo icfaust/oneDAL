@@ -30,6 +30,9 @@
 
 namespace oneapi::dal::roc_auc_score::backend {
 
+namespace bk = dal::backend;
+namespace pr = dal::backend::primitives;
+
 using dal::backend::context_gpu;
 using input_t = compute_input<task::compute>;
 using result_t = compute_result<task::compute>;
@@ -56,12 +59,12 @@ double compute_roc_auc_score(sycl::queue& queue,
                     auto sort_event = pr::radix_sort_indices_inplace<Float, Float>(queue, y1, y0, deps);
 
                     // STEP 2
-                    // done as integer to prevent rank spacing problems     
-                    auto diff = pr::ndarray<std::uint32_t, 1>::ones(queue, { row_count }, sycl::usm::alloc::device);
+                    // done as integer to prevent rank incrementing problems at higher float values     
+                    auto diff = pr::ndarray<std::uint32_t, 1>::ones(queue, {row_count}, sycl::usm::alloc::device);
 
-                    auto base = dal::make_ndview(y0.get_data(), row_count - 1);
-                    auto offset = dal::make_ndview(y0.get_data() + 1, row_count - 1);
-                    auto diff_offset = dal::make_ndview(diff.get_data() + 1, row_count - 1);
+                    auto base = y0.get_slice(0, row_count - 1);
+                    auto offset = y0.get_slice(1, row_count);
+                    auto diff_offset = diff.get_slice(1, row_count - 1);
 
                     const auto kernel_neq = [=](const Float a, const Float b) -> std::uint32_t {
                         return reinterpret_cast<std::uint32_t>(a != b);
@@ -76,13 +79,49 @@ double compute_roc_auc_score(sycl::queue& queue,
                     // create necessary arrays for doing the integration (tps and fps)
                     // requires first allocating 2 arrays size of the number of ranks and then
                     // a custom kernel for finding the total number of elements in that rank
-                    const std::uint32_t* data_ptr = diff.get_data();
-                    auto total_ranks = data_ptr[row_count - 1]
-                    auto fps = pr::ndarray<Float, 1>::empty(queue, { total_ranks }, sycl::usm::alloc::device);
-                    auto tps = pr::ndarray<Float, 1>::empty(queue, { total_ranks }, sycl::usm::alloc::device);
+                    const std::uint32_t* diff_ptr = diff.get_data();
+                    auto total_ranks = diff_ptr[row_count - 1];
+                    auto ps = pr::ndarray<Float, 2>::empty(queue, { total_ranks, 2 }, sycl::usm::alloc::device);
 
-                    // custom kernel to add by group using atomic add
+                    // custom kernel to add by group using atomic add, instead of doing it twice, create an interleaved
+                    // tps, fps 2d data array to leverage hardware efficiencies (vector loading) and to reduce atomics
+                    // pressure.
+                    // first extract necessary pointers from the data
+                    const Float* ps_ptr = ps.get_data();
+                    const Float* y0_ptr = y0.get_data();
+                    
+                    // look in array and find rank location in the 2d array, and then select tps or fps based on y0 value
+                    auto ps_grouping_event = queue.parallel_for(sycl::range<1>(total_ranks), {rank_gen_event}, [=](sycl::id<1> i) {
+                        bk::atomic_global_add(ps_ptr + 2*diff_ptr[i] + y0_ptr[i], Float(1))                     
+                    });
 
+                    auto tps = pr::ndarray<Float, 1>::empty(queue, { total_ranks}, sycl::usm::alloc::device);
+                    auto fps = pr::ndarray<Float, 1>::empty(queue, { total_ranks}, sycl::usm::alloc::device);
+                    const Float* tps_ptr = tps.get_data();
+                    const Float* fps_ptr = fps.get_data();
+
+                    // extract fps and tps into separate arrays (keep clean to convince compiler to memcpy)
+                    auto de_interleave_event = queue.parallel_for(sycl::range<1>(total_ranks), {ps_grouping_event}, [=](sycl::id<1> i) {
+                        fps_ptr[i] = ps_ptr[2*i];
+                        tps_ptr[i] = ps_ptr[2*i + 1];                  
+                    });
+
+                    // cumulative sum the fps and tps (possibly do this as double?)
+                    fps_event = cumulative_sum_1d(queue, fps, {de_interleave_event});
+                    tps_event = cumulative_sum_1d(queue, tps, {de_interleave_event});
+
+                    const Float tot_pos = tps[total_ranks - 1];
+                    const Float tot_neg = fps[total_ranks - 1];
+
+                    // STEP 4
+                    // integrate under the curve (AUC is 1-res due to the initial sort) with double data for precision
+                    auto trapdata = pr::ndarray<double, 1>::empty(queue, { total_ranks}, sycl::usm::alloc::device);
+                    auto trapezoidal_event = queue.parallel_for(sycl::range<1>(total_ranks), {ps_grouping_event}, [=](sycl::id<1> i) {
+                        fps_ptr[i] = ps_ptr[2*i];
+                        tps_ptr[i] = ps_ptr[2*i + 1];                  
+                    });
+
+                    // return result
                 }
 
 template <typename Float>
