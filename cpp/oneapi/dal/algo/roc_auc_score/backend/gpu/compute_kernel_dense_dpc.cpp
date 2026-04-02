@@ -128,21 +128,34 @@ double compute_roc_auc_score(sycl::queue& queue,
                     return double(1) - (double(.5) * result) / (tot_pos * tot_neg); // due to the nature of how the original sort was done
                 }
 
+
 template <typename Float>
 struct compute_kernel_gpu<Float, method::dense, task::compute> {
     result_t operator()(const context_gpu& ctx,
                         const descriptor_t& desc,
                         const input_t& input) const {
-        throw unimplemented(dal::detail::error_messages::method_not_implemented());
+        auto& queue = ctx.get_queue();
+        const auto y0_table = input.get_y0();
+        const auto y1_table = input.get_y1();
+
+        auto y0 = pr::table2ndarray_1d<Float>(queue, y0_table, sycl::usm::alloc::device);
+        auto y1 = pr::table2ndarray_1d<Float>(queue, y1_table, sycl::usm::alloc::device);
+
+        return result_t{}.set_score(compute_roc_auc_score(queue, y0, y1);
     }
 
 #ifdef ONEDAL_DATA_PARALLEL
     void operator()(const context_gpu& ctx,
                     const descriptor_t& desc,
-                    const table& y0,
-                    const table& y1,
+                    const table& y0_table,
+                    const table& y1_table,
                     double& res) {
-        throw unimplemented(dal::detail::error_messages::method_not_implemented());
+        auto& queue = ctx.get_queue();
+
+        auto y0 = pr::table2ndarray_1d<Float>(queue, y0_table, sycl::usm::alloc::device);
+        auto y1 = pr::table2ndarray_1d<Float>(queue, y1_table, sycl::usm::alloc::device);
+
+        res = compute_roc_auc_score(queue, y0, y1);
     }
 #endif
 };
