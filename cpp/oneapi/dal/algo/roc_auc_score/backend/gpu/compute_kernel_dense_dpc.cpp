@@ -22,7 +22,6 @@
 #include "oneapi/dal/backend/primitives/element_wise.hpp"
 #include "oneapi/dal/backend/primitives/placement.hpp"
 #include "oneapi/dal/backend/primitives/sort.hpp"
-#include "oneapi/dal/backend/primitives/reduction.hpp"
 #include "oneapi/dal/backend/primitives/utils.hpp"
 
 #include "oneapi/dal/detail/profiler.hpp"
@@ -44,11 +43,12 @@ double compute_roc_auc_score(sycl::queue& queue,
                         pr::ndarray<Float, 1>& y1,
                         const dal::backend::event_vector& deps = {}) {
 
+                    double result = 0;
                     // Steps:
                     // 1. sort the y1 data using key value pairs (sort primitive)
                     // 2. diff the sort data based on y1 using a gather approach (neq comparison to next element array)
-                    // 3. add up instances per group of y0 (custom segmented sum kernel) true and false positive scores via cumsum (placement primitive)
-                    // 4. integrate results for roc_auc_score (sum reduction primitive)
+                    // 3. add up y0 instances per y1 rank (custom segmented sum reduction kernel) true and false positive scores via cumsum (placement primitive)
+                    // 4. integrate results for roc_auc_score (custom sum reduction kernel)
                     
                     // STEP 1
                     auto row_count = y1.get_dimension(0);
@@ -56,7 +56,7 @@ double compute_roc_auc_score(sycl::queue& queue,
                     // sort y1 data using key value pairs (sort primitive) to get y0 and y1 in y1 ascending order
                     // this complicates/inverts some of the logic in calculating roc_auc_score but improves perf
                     // do not use dpl version due to hardware limitations
-                    auto sort_event = pr::radix_sort_indices_inplace<Float, Float>(queue, y1, y0, deps);
+                    pr::radix_sort_indices_inplace<Float, Float>(queue, y1, y0, deps).wait_and_throw();
 
                     // STEP 2
                     // done as integer to prevent rank incrementing problems at higher float values     
@@ -70,10 +70,10 @@ double compute_roc_auc_score(sycl::queue& queue,
                         return reinterpret_cast<std::uint32_t>(a != b);
                     };
 
-                    auto diff_event = element_wise(queue, kernel_neq, base, offset, diff_offset, {sort_event});
+                    element_wise(queue, kernel_neq, base, offset, diff_offset).wait_and_throw();
 
                     // does this need to be done as integers to prevent large number spacing issues (probably)
-                    rank_gen_event = cumulative_sum_1d(queue, diff, {diff_event});
+                    cumulative_sum_1d(queue, diff).wait_and_throw();
 
                     // STEP 3
                     // create necessary arrays for doing the integration (tps and fps)
@@ -91,9 +91,9 @@ double compute_roc_auc_score(sycl::queue& queue,
                     const Float* y0_ptr = y0.get_data();
                     
                     // look in array and find rank location in the 2d array, and then select tps or fps based on y0 value
-                    auto ps_grouping_event = queue.parallel_for(sycl::range<1>(total_ranks), {rank_gen_event}, [=](sycl::id<1> i) {
+                    queue.parallel_for(sycl::range<1>(total_ranks), [=](sycl::id<1> i) {
                         bk::atomic_global_add(ps_ptr + 2*diff_ptr[i] + y0_ptr[i], Float(1))                     
-                    });
+                    }).wait_and_throw();
 
                     auto tps = pr::ndarray<Float, 1>::empty(queue, { total_ranks}, sycl::usm::alloc::device);
                     auto fps = pr::ndarray<Float, 1>::empty(queue, { total_ranks}, sycl::usm::alloc::device);
@@ -101,27 +101,31 @@ double compute_roc_auc_score(sycl::queue& queue,
                     const Float* fps_ptr = fps.get_data();
 
                     // extract fps and tps into separate arrays (keep clean to convince compiler to memcpy)
-                    auto de_interleave_event = queue.parallel_for(sycl::range<1>(total_ranks), {ps_grouping_event}, [=](sycl::id<1> i) {
+                    auto de_interleave_event = queue.parallel_for(sycl::range<1>(total_ranks), [=](sycl::id<1> i) {
                         fps_ptr[i] = ps_ptr[2*i];
                         tps_ptr[i] = ps_ptr[2*i + 1];                  
                     });
 
                     // cumulative sum the fps and tps (possibly do this as double?)
-                    fps_event = cumulative_sum_1d(queue, fps, {de_interleave_event});
-                    tps_event = cumulative_sum_1d(queue, tps, {de_interleave_event});
+                    auto fps_event = cumulative_sum_1d(queue, fps, {de_interleave_event});
+                    auto tps_event = cumulative_sum_1d(queue, tps, {de_interleave_event});
 
-                    const Float tot_pos = tps[total_ranks - 1];
-                    const Float tot_neg = fps[total_ranks - 1];
+                    queue.wait_and_throw(); // do this instead to catch both at once
+
+                    const Float tot_pos = tps_ptr[total_ranks - 1];
+                    const Float tot_neg = fps_ptr[total_ranks - 1];
 
                     // STEP 4
-                    // integrate under the curve (AUC is 1-res due to the initial sort) with double data for precision
-                    auto trapdata = pr::ndarray<double, 1>::empty(queue, { total_ranks}, sycl::usm::alloc::device);
-                    auto trapezoidal_event = queue.parallel_for(sycl::range<1>(total_ranks), {ps_grouping_event}, [=](sycl::id<1> i) {
-                        fps_ptr[i] = ps_ptr[2*i];
-                        tps_ptr[i] = ps_ptr[2*i + 1];                  
-                    });
+      
+                    // cannot use onedal reduction primitive without performance loss (i.e. two steps instead of one)
+                    // note result is a double to maintain precision.
+                    queue.parallel_for(sycl::range<1>(total_ranks-1), sycl::reduction(result, sycl::plus<>()), [=](sycl::id<1> i, auto &sum){
+                        sum += (tps_ptr[i + 1] + tps_ptr[i]) * (fps_ptr[i + 1] - fps_ptr[i]);
+                    }).wait_and_throw();
+                    // something is wrong with my math
+                    result += tpr_ptr[0] * fpr_ptr[0];
 
-                    // return result
+                    return double(1) - (double(.5) * result) / (tot_pos * tot_neg); // due to the nature of how the original sort was done
                 }
 
 template <typename Float>
