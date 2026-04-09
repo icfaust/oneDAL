@@ -18,6 +18,7 @@
 
 #include "oneapi/dal/detail/common.hpp"
 #include "oneapi/dal/table/common.hpp"
+#include "oneapi/dal/rng.hpp"
 #include <cstdint>
 
 namespace oneapi::dal::train_test_split {
@@ -78,12 +79,14 @@ public:
     double get_train_size() const;
     double get_test_size() const;
     bool get_shuffle() const;
+    engine_type get_engine_type() const;
     std::uint64_t get_seed() const;
 
 protected:
     void set_train_size(double);
     void set_test_size(double);
     void set_shuffle(bool);
+    void set_engine_type(engine_type);
     void set_seed(std::uint64_t);
 
 private:
@@ -156,6 +159,16 @@ public:
 
     auto& set_shuffle(bool value) {
         base_t::set_shuffle(value);
+        return *this;
+    }
+
+    /// @remark default = engine_type::mt19937
+    engine_type get_engine_type() const {
+        return base_t::get_engine_type();
+    }
+
+    auto& set_engine_type(engine_type value) {
+        base_t::set_engine_type(value);
         return *this;
     }
 

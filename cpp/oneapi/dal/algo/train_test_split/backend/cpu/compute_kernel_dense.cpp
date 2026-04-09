@@ -19,8 +19,10 @@
 
 #include <daal/include/data_management/data/internal/train_test_split.h>
 #include <daal/include/data_management/data/homogen_numeric_table.h>
+#include <daal/include/algorithms/engines/mt19937/mt19937.h>
 
 #include "oneapi/dal/algo/train_test_split/backend/cpu/compute_kernel.hpp"
+#include "oneapi/dal/backend/primitives/rng/host_engine.hpp"
 #include "oneapi/dal/backend/interop/common.hpp"
 #include "oneapi/dal/backend/interop/error_converter.hpp"
 #include "oneapi/dal/backend/interop/table_conversion.hpp"
@@ -73,13 +75,14 @@ static result_t call_daal_kernel(const context_cpu& ctx,
 
     if (desc.get_shuffle()) {
         const int MT19937_NUMBERS = 624;
+        
         auto daal_rng_state = daal::data_management::HomogenNumericTable<int>::create(1, MT19937_NUMBERS, daal::data_management::NumericTable::doAllocate);
         int* rng_state_ptr = daal_rng_state->getArray();
 
-        std::mt19937 engine(static_cast<unsigned int>(desc.get_seed()));
-        for (int i = 0; i < MT19937_NUMBERS; ++i) {
-            rng_state_ptr[i] = static_cast<int>(engine());
-        }
+        auto engine_type = dal::backend::primitives::convert_engine_method(desc.get_engine_type());
+        dal::backend::primitives::host_engine eng(desc.get_seed(), engine_type);
+        
+        dal::backend::primitives::uniform<int>(MT19937_NUMBERS, rng_state_ptr, eng, 0, std::numeric_limits<int>::max());
 
         daal::data_management::internal::generateShuffledIndices<int>(daal_indices, daal_rng_state);
     } else {

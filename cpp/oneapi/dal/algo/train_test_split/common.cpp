@@ -26,6 +26,7 @@ public:
     double train_size = -1.0;
     double test_size = -1.0;
     bool shuffle = true;
+    engine_type engine = engine_type::mt19937;
     std::uint64_t seed = 777;
 };
 
@@ -63,6 +64,16 @@ bool descriptor_base<Task>::get_shuffle() const {
 template <typename Task>
 void descriptor_base<Task>::set_shuffle(bool value) {
     impl_->shuffle = value;
+}
+
+template <typename Task>
+engine_type descriptor_base<Task>::get_engine_type() const {
+    return impl_->engine;
+}
+
+template <typename Task>
+void descriptor_base<Task>::set_engine_type(engine_type value) {
+    impl_->engine = value;
 }
 
 template <typename Task>
