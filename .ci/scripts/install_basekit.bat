@@ -23,9 +23,13 @@ set URL=%1
 if "%2"=="" (set COMPONENTS=default) else (set COMPONENTS=%2)
 if "%3"=="" (set DIRECTORY=%TEMP%\oneapi\) else (set DIRECTORY=%3)
 
+echo curl
 curl.exe --output %TEMP%\webimage.exe --url %URL% --retry 5 --retry-delay 5
+echo extract
 start /b /wait %TEMP%\webimage.exe -s -x -f webimage_extracted --log extract.log
+echo delete
 del %TEMP%\webimage.exe
+echo bootstrapper
 webimage_extracted\bootstrapper.exe -s --action install --components %COMPONENTS% --eula accept --install-dir %DIRECTORY% -p=NEED_VS2017_INTEGRATION=0 -p=NEED_VS2019_INTEGRATION=0 -p=NEED_VS2022_INTEGRATION=0 --log-dir=.
 set installer_exit_code=%ERRORLEVEL%
 rd /s/q "webimage_extracted"
