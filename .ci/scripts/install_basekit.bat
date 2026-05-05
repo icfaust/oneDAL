@@ -25,6 +25,8 @@ if "%3"=="" (set DIRECTORY=%TEMP%\oneapi\) else (set DIRECTORY=%3)
 
 echo curl
 curl.exe --output %TEMP%\webimage.exe --url %URL% --retry 5 --retry-delay 5
+dir
+dir %TEMP%
 echo extract
 start /b /wait %TEMP%\webimage.exe -s -x -f webimage_extracted --log extract.log
 echo delete
