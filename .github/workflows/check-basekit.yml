@@ -37,6 +37,8 @@ jobs:
           curl -L --retry 3 -o opencl.html $OPENCL_VERSION_URL
           QUERY_OPENCL=$(grep -oP 'https?://[^ "]+\.exe' opencl.html | head -1)
           QUERY_VERSION=$(echo "$QUERY_OPENCL" | grep -oP '[\d.]+(?=_offline)')
+          echo $QUERY_OPENCL
+          cat opencl.html
           echo "query_opencl=$QUERY_OPENCL" >> $GITHUB_ENV
           echo "query_openclname=$QUERY_VERSION" >> $GITHUB_ENV
       - name: Create Basekit Update PR
