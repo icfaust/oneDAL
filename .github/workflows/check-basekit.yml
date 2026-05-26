@@ -3,6 +3,10 @@ on:
   schedule:
     - cron: "0 0 * * 6"
 
+env:
+  BASEKIT_VERSION_URL: https://www.intel.com/content/www/us/en/developer/tools/oneapi/oneapi-toolkit-download.html
+  OPENCL_VERSION_URL: https://www.intel.com/content/www/us/en/developer/articles/technical/intel-cpu-runtime-for-opencl-applications-with-sycl-support.html
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref_name }}-${{ github.event.number || github.sha }}
   cancel-in-progress: true
@@ -15,7 +19,13 @@ jobs:
   check-basekit-download:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+      - name: Install Python
+        uses: actions/setup-python@v6
+      - name: Collect .exe URLs
+        run: |
+            echo "basekit=$(grep -oP -m 1 "(?<=WINDOWS_BASEKIT_URL: )\S+)" >> $GITHUB_ENV
+            echo "opencl=$()" >> $GITHUB_ENV
       - name: Attempt PR
         run: |
           date > probe.txt
