@@ -21,19 +21,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Install Python
-        uses: actions/setup-python@v6
       - name: Collect .exe URLs
         run: |
             echo "basekit=$(grep -oP -m 1 '(?<=WINDOWS_BASEKIT_URL: )\S+' .ci/pipeline/ci.yml)" >> $GITHUB_ENV
             echo "opencl=$(grep -oP -m 1  'https?://[^ ]+\.exe' .ci/scripts/collect_opencl_rt.ps1)" >> $GITHUB_ENV
-      - name: Prepare playwright
-        run: |
-          pip install playwright
       - name: Query basekit
-        run: python .ci/scripts/check_basekit.py $basekit $BASEKIT_VERSION_URL
+        run: curl -L --retry 3 -o basekit.html "${{ env.basekit }}"
       - name: Query opencl
-        run: python .ci/scripts/check_basekit.py $opencl $OPENCL_VERSION_URL
+        run: curl -L --retry 3 -o opencl.html "${{ env.opencl }}"
       - name: Attempt PR
         run: |
           date > probe.txt
