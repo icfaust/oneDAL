@@ -28,16 +28,14 @@ jobs:
       - name: Query basekit URL
         run: |
           curl -L --retry 3 -o basekit.html $BASEKIT_VERSION_URL
-          QUERY_BASEKIT=$(grep -oP -m 1 'https?://[^ "]+\.exe' basekit.html)
+          QUERY_BASEKIT=$(grep -oP 'https?://[^ "]+\.exe' basekit.html | head -1)
           QUERY_VERSION=$(echo "$QUERY_BASEKIT" | grep -oP '[\d.]+(?=_offline)')
           echo "query_basekit=$QUERY_BASEKIT" >> $GITHUB_ENV
           echo "query_basename=$QUERY_VERSION" >> $GITHUB_ENV
       - name: Query opencl URL
         run: |
           curl -L --retry 3 -o opencl.html $OPENCL_VERSION_URL
-          QUERY_OPENCL=$(grep -oP -m 1 'https?://[^ "]+\.exe' opencl.html)
-          echo $QUERY_OPENCL
-          cat opencl.html
+          QUERY_OPENCL=$(grep -oP 'https?://[^ "]+\.exe' opencl.html | head -1)
           QUERY_VERSION=$(echo "$QUERY_OPENCL" | grep -oP '[\d.]+(?=_offline)')
           echo "query_opencl=$QUERY_OPENCL" >> $GITHUB_ENV
           echo "query_openclname=$QUERY_VERSION" >> $GITHUB_ENV
