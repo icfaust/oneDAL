@@ -33,6 +33,8 @@ jobs:
           echo "query_basekit=$QUERY_BASEKIT" >> $GITHUB_ENV
           echo "query_basename=$QUERY_VERSION" >> $GITHUB_ENV
           echo "basekit_PR=$(gh pr list --head basekit/$QUERY_VERSION --state open --json number --jq 'length')" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Query opencl URL
         run: |
           curl -L --retry 3 -o opencl.html $OPENCL_VERSION_URL
@@ -42,8 +44,10 @@ jobs:
           echo "query_opencl=$QUERY_OPENCL" >> $GITHUB_ENV
           echo "query_openclname=$QUERY_VERSION" >> $GITHUB_ENV
           echo "opencl_PR=$(gh pr list --head opencl/$QUERY_VERSION --state open --json number --jq 'length')" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Create Basekit Update PR
-        if: ${{ env.main_basekit != env.query_basekit && env.basekit_PR != 1 }}
+        if: ${{ env.main_basekit != env.query_basekit && env.basekit_PR != '1' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -56,7 +60,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Create OpenCL Update PR
-        if: ${{ env.main_opencl != env.query_opencl && env.opencl_PR != 1 }}
+        if: ${{ env.main_opencl != env.query_opencl && env.opencl_PR != '1' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
