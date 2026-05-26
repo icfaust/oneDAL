@@ -35,6 +35,7 @@ jobs:
       - name: Query opencl URL
         run: |
           curl -L --retry 3 -o opencl.html $OPENCL_VERSION_URL
+          grep -oP 'https?://[^ "]+\.exe' opencl.html
           QUERY_OPENCL=$(grep -oP 'https?://[^ "]+\.exe' opencl.html | head -1)
           QUERY_VERSION=$(echo "$QUERY_OPENCL" | grep -oP '[\d.]+(?=_offline)')
           echo $QUERY_OPENCL
