@@ -2,14 +2,18 @@ name: Check Basekit
 on: 
   schedule:
     - cron: "0 0 * * 6"
-  workflow_dispatch: # So you can trigger it manually
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref_name }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+  contents: write
 
 jobs:
   check-basekit-download:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
     steps:
       - uses: actions/checkout@v4
       - name: Attempt PR
