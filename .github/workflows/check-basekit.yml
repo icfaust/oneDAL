@@ -39,9 +39,9 @@ jobs:
       - name: Query online URL
         run: |
           curl -L --retry 3 -o temp.html ${{ matrix.MAIN_URL }}
-          cat temp.html
           QUERY_EXE=$(grep -oP 'https?://[^ "]+\.exe' temp.html | head -1)
           echo $QUERY_EXE
+          cat temp.html
           QUERY_VERSION=$(echo "$QUERY_EXE" | grep -oP '[\d.]+(?=.exe)')
           echo "query_exe=$QUERY_EXE" >> $GITHUB_ENV
           echo "query_name=$QUERY_NAME" >> $GITHUB_ENV
