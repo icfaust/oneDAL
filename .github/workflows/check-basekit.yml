@@ -32,7 +32,6 @@ jobs:
           QUERY_VERSION=$(echo "$QUERY_BASEKIT" | grep -oP '[\d.]+(?=_offline)')
           echo "query_basekit=$QUERY_BASEKIT" >> $GITHUB_ENV
           echo "query_basename=$QUERY_VERSION" >> $GITHUB_ENV
-
       - name: Query opencl URL
         run: |
           curl -L --retry 3 -o opencl.html $OPENCL_VERSION_URL
