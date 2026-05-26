@@ -42,6 +42,7 @@ jobs:
           QUERY_EXE=$(grep -oP 'https?://[^ "]+\.exe' temp.html | head -1)
           echo $QUERY_EXE
           QUERY_VERSION=$(echo "$QUERY_EXE" | grep -oP '[\d.]+(?=.exe)')
+          echo $QUERY_VERSION
           echo "query_exe=$QUERY_EXE" >> $GITHUB_ENV
           echo "query_version=$QUERY_VERSION" >> $GITHUB_ENV
           echo "PR_BOOL=$(gh pr list --head ${{ matrix.DEPENDENCY }}/$QUERY_VERSION --state open --json number --jq 'length')" >> $GITHUB_ENV
