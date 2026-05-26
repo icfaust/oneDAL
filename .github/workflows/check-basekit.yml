@@ -36,6 +36,8 @@ jobs:
         run: |
           curl -L --retry 3 -o opencl.html $OPENCL_VERSION_URL
           QUERY_OPENCL=$(grep -oP -m 1 'https?://[^ "]+\.exe' opencl.html)
+          echo $QUERY_OPENCL
+          cat opencl.html
           QUERY_VERSION=$(echo "$QUERY_OPENCL" | grep -oP '[\d.]+(?=_offline)')
           echo "query_opencl=$QUERY_OPENCL" >> $GITHUB_ENV
           echo "query_openclname=$QUERY_VERSION" >> $GITHUB_ENV
