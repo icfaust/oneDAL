@@ -24,8 +24,8 @@ jobs:
         uses: actions/setup-python@v6
       - name: Collect .exe URLs
         run: |
-            echo "basekit=$(grep -oP -m 1 "(?<=WINDOWS_BASEKIT_URL: )\S+)" >> $GITHUB_ENV
-            echo "opencl=$()" >> $GITHUB_ENV
+            echo "basekit=$(grep -oP -m 1 '(?<=WINDOWS_BASEKIT_URL: )\S+' .ci/pipeline/ci.yml)" >> $GITHUB_ENV
+            echo "opencl=$(grep -oP -m 1  'https?://[^ ]+\.exe' .ci/scripts/collect_opencl_rt.ps1)" >> $GITHUB_ENV
       - name: Attempt PR
         run: |
           date > probe.txt
