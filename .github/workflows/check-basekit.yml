@@ -23,7 +23,7 @@ jobs:
       - uses: actions/checkout@v6
       - name: Collect main URLs
         run: |
-            echo "main_basekit=$(grep -oP -m 1 '(?<=WINDOWS_BASEKIT_URL: )[^\s`]+' .ci/pipeline/ci.yml)" >> $GITHUB_ENV
+            echo "main_basekit=$(grep -oP -m 1 '(?<=WINDOWS_BASEKIT_URL: )[^\s\']+' .ci/pipeline/ci.yml)" >> $GITHUB_ENV
             echo "main_opencl=$(grep -oP -m 1  'https?://[^ ]+\.exe' .ci/scripts/collect_opencl_rt.ps1)" >> $GITHUB_ENV
       - name: Query basekit URL
         run: |
