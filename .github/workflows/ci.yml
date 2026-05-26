@@ -35,7 +35,6 @@ concurrency:
 
 jobs:
   LinuxMakeDPCPP:
-    if: github.repository == 'uxlfoundation/oneDAL'
     strategy:
       fail-fast: false
       matrix:
@@ -50,6 +49,10 @@ jobs:
     steps:
       - name: Checkout oneDAL
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: download test
+        run: |
+          curl -L --retry 3 -o test.html https://www.intel.com/content/www/us/en/developer/tools/oneapi/oneapi-toolkit-download.html
+          cat test.html
       - name: Install DPC++
         run: .ci/env/apt.sh dpcpp
       - name: Install MKL
