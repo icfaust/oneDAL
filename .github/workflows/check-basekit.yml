@@ -1,8 +1,11 @@
-name: Test PR Permissions
-on: workflow_dispatch # So you can trigger it manually
+name: Check Basekit
+on: 
+  schedule:
+    - cron: "0 0 * * 6"
+  workflow_dispatch: # So you can trigger it manually
 
 jobs:
-  test-pr:
+  check-basekit-download:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
