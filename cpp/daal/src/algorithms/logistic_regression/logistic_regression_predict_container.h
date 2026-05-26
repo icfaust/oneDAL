@@ -25,7 +25,7 @@
 
 #include "algorithms/logistic_regression/logistic_regression_predict.h"
 #include "algorithms/classifier/classifier_model.h"
-#include "src/services/service_algo_utils.h"
+#include "src/algorithms/algorithm_dispatch_container_batch.h"
 #include "src/algorithms/logistic_regression/logistic_regression_predict_kernel.h"
 
 namespace daal
@@ -38,6 +38,8 @@ namespace prediction
 {
 namespace internal
 {
+using namespace daal::internal;
+
 /**
  * <a name="DAAL-CLASS-ALGORITHMS__LOGISTIC_REGRESSION__PREDICTION__BATCHCONTAINER"></a>
  * \brief Provides methods to run implementations of the logistic regression algorithm.
@@ -96,8 +98,8 @@ services::Status BatchContainer<algorithmFPType, method, cpu>::compute()
 
     daal::services::Environment::env & env = *_env;
 
-    __DAAL_CALL_KERNEL(env, internal::PredictKernel, __DAAL_KERNEL_ARGUMENTS(algorithmFPType, method), compute,
-                       daal::services::internal::hostApp(*input), a, m, par->nClasses, r, prob, logProb);
+    __DAAL_CALL_KERNEL(env, internal::PredictKernel, __DAAL_KERNEL_ARGUMENTS(algorithmFPType, method), compute, a, m, par->nClasses, r, prob,
+                       logProb);
 }
 
 } // namespace internal

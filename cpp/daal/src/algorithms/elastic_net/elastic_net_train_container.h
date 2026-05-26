@@ -27,9 +27,9 @@
 #include "src/algorithms/kernel.h"
 #include "algorithms/elastic_net/elastic_net_training_types.h"
 #include "algorithms/elastic_net/elastic_net_training_batch.h"
+#include "src/algorithms/algorithm_dispatch_container_batch.h"
 #include "src/algorithms/elastic_net/elastic_net_train_kernel.h"
 #include "src/algorithms/elastic_net/elastic_net_model_impl.h"
-#include "src/services/service_algo_utils.h"
 
 namespace daal
 {
@@ -92,8 +92,7 @@ services::Status BatchContainer<algorithmFPType, method, cpu>::compute()
     daal::services::Environment::env & env       = *_env;
     services::SharedPtr<daal::algorithms::optimization_solver::mse::Batch<algorithmFPType> > objFunc(
         new daal::algorithms::optimization_solver::mse::Batch<algorithmFPType>(x->getNumberOfRows()));
-    __DAAL_CALL_KERNEL(env, internal::TrainBatchKernel, __DAAL_KERNEL_ARGUMENTS(algorithmFPType, method), compute,
-                       daal::services::internal::getHostApp(*input), x, y, *m, *result, *par, objFunc);
+    __DAAL_CALL_KERNEL(env, internal::TrainBatchKernel, __DAAL_KERNEL_ARGUMENTS(algorithmFPType, method), compute, x, y, *m, *result, *par, objFunc);
 }
 
 } // namespace internal

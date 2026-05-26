@@ -38,9 +38,6 @@
 #include "src/services/service_data_utils.h"
 #include "src/data_management/service_numeric_table.h"
 
-using namespace daal::internal;
-using namespace daal::services::internal;
-
 namespace daal
 {
 namespace algorithms
@@ -51,6 +48,9 @@ namespace prediction
 {
 namespace internal
 {
+using namespace daal::internal;
+using namespace daal::services::internal;
+
 //Base class for binary classification subtask
 template <typename algorithmFPType, CpuType cpu>
 class SubTask
@@ -141,8 +141,8 @@ private:
 template <typename algorithmFPType, CpuType cpu>
 struct MultiClassClassifierPredictKernel<multiClassClassifierWu, training::oneAgainstOne, algorithmFPType, cpu> : public Kernel
 {
-    services::Status compute(const NumericTable * a, const daal::algorithms::Model * m, SvmModel * svmModel, NumericTable * pred, NumericTable * df,
-                             const daal::algorithms::Parameter * par);
+    services::Status compute(const NumericTable * a, const daal::algorithms::Model * m, svm::internal::ModelImpl * svmModel, NumericTable * pred,
+                             NumericTable * df, const daal::algorithms::Parameter * par);
 };
 
 } // namespace internal

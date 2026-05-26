@@ -41,16 +41,43 @@ lnx_cc_flags = {
     "pedantic": lnx_cc_pedantic_flags,
 }
 
+# icx/icpx on Windows run in their native clang-cl driver mode, so flags
+# use MSVC-style spellings. Mirrors dev/make/compiler_definitions/{icx,dpcpp}.mkl.32e.mk
+# (COMPILER.win.icx / COMPILER.win.dpcpp).
+win_icx_common_flags = [
+    "-MD",
+    "-nologo",
+    "-WX",
+    "-Qopenmp-simd",
+    "-Wno-deprecated-declarations",
+    "-Wno-ignored-attributes",
+    # Silence icx's "loop not vectorized" pass-failed diagnostic so it does
+    # not combine with `-WX`. Matches `-Wno-pass-failed` from `-DEBC.icx`.
+    "-Wno-pass-failed",
+    # icx 2026 is stricter about [[nodiscard]] than older toolchains;
+    # suppress to avoid failing third-party headers (fmt, Catch2) that
+    # ignore nodiscard-returning functions called for side effects.
+    "-Wno-unused-result",
+    "-Wno-unused-variable",
+]
+
+# Matches `pedantic.opts.win.icx` / `pedantic.opts.win.dpcpp` in the Makefile.
+win_icx_pedantic_flags = [
+    "-Wall",
+    "-Wextra",
+    "-Wwritable-strings",
+    "-Wno-unused-parameter",
+]
+
+win_icx_flags = {
+    "common": win_icx_common_flags,
+    "pedantic": win_icx_pedantic_flags,
+}
+
 def get_default_flags(arch_id, os_id, compiler_id, category = "common"):
     _check_flag_category(category)
     if os_id == "lnx":
         flags = lnx_cc_flags[category]
-        if compiler_id == "icc" and category == "common":
-            flags = flags + [
-                "-qopenmp-simd",
-                "-mGLOB_freestanding=TRUE",
-                "-mCG_no_libirc=TRUE",
-            ]
         if compiler_id == "icx" and category == "common":
             flags = flags + [
                 "-qopenmp-simd",
@@ -75,31 +102,32 @@ def get_default_flags(arch_id, os_id, compiler_id, category = "common"):
         if compiler_id not in ["icx", "icpx"]:
             flags = flags + ["-fno-strict-overflow"]
         return flags
+    if os_id == "win":
+        if compiler_id in ["icx", "icpx"]:
+            flags = win_icx_flags[category]
+            if compiler_id == "icpx" and category == "common":
+                flags = flags + ["-fsycl"]
+            return flags
+        # cl / other fall through to empty; cl path uses the rules_cc
+        # MSVC auto-config and does not consume these flags.
+        return []
     fail("Unsupported OS")
 
 def get_cpu_flags(arch_id, os_id, compiler_id):
     sse2 = []
-    sse42 = []
     avx2 = []
     avx512 = []
     if compiler_id == "gcc":
         sse2 = ["-march=nocona"]
-        sse42 = ["-march=corei7"]
         avx2 = ["-march=haswell"]
         avx512 = ["-march=haswell"]
-    elif compiler_id == "icc":
-        sse2 = ["-xSSE2"]
-        sse42 = ["-xSSE4.2"]
-        avx2 = ["-xCORE-AVX2"]
-        avx512 = ["-xCORE-AVX512", "-qopt-zmm-usage=high"]
     elif compiler_id in ["icx", "icpx"]:
+        # icx on Windows accepts -march like its Linux counterpart.
         sse2 = ["-march=nocona"]
-        sse42 = ["-march=nehalem"]
         avx2 = ["-march=haswell"]
         avx512 = ["-march=skx"]
     return {
         "sse2": sse2,
-        "sse42": sse42,
         "avx2": avx2,
         "avx512": avx512,
     }
