@@ -118,39 +118,41 @@ AR_is_$(subst $(space),_,$(origin AR)) := yes
 
 OSList          := lnx win mac
 
-o            := $(if $(OS_is_win),obj,o)
-a            := $(if $(OS_is_win),lib,a)
-so           := $(if $(OS_is_win),dll,so)
-d            := $(if $(OS_is_win),$(if $(MSVC_RT_is_debug),d,),)
-dtbb         := $(if $(OS_is_win),$(if $(MSVC_RT_is_debug),_debug,),)
-plib         := $(if $(OS_is_win),,lib)
-scr          := $(if $(OS_is_win),bat,sh)
-y            := $(notdir $(filter $(_OS)/%,lnx/so win/dll mac/dylib))
--Fo          := $(if $(OS_is_win),-Fo,-o)
--Q           := $(if $(OS_is_win),$(if $(COMPILER_is_vc),-,-Q),-)
--cxx17       := $(if $(COMPILER_is_vc),/std:c++17,$(-Q)std=c++17)
--optlevel    := $(-optlevel.$(COMPILER))
--fPIC        := $(if $(OS_is_win),,-fPIC)
--visibility  := $(if $(OS_is_win),,-fvisibility=hidden)
--DMKL_ILP64  := $(if $(filter mkl,$(BACKEND_CONFIG)),-DMKL_ILP64)
--Zl          := $(-Zl.$(COMPILER))
--Zl_DPCPP    := $(-Zl.dpcpp)
+o              := $(if $(OS_is_win),obj,o)
+a              := $(if $(OS_is_win),lib,a)
+so             := $(if $(OS_is_win),dll,so)
+d              := $(if $(OS_is_win),$(if $(MSVC_RT_is_debug),d,),)
+dtbb           := $(if $(OS_is_win),$(if $(MSVC_RT_is_debug),_debug,),)
+plib           := $(if $(OS_is_win),,lib)
+scr            := $(if $(OS_is_win),bat,sh)
+y              := $(notdir $(filter $(_OS)/%,lnx/so win/dll mac/dylib))
+-Fo            := $(if $(OS_is_win),-Fo,-o)
+-Q             := $(if $(OS_is_win),$(if $(COMPILER_is_vc),-,-Q),-)
+-cxx17         := $(if $(COMPILER_is_vc),/std:c++17,$(-Q)std=c++17)
+-optlevel      := $(-optlevel.$(COMPILER))
+-fPIC          := $(if $(OS_is_win),,-fPIC)
+-visibility    := $(if $(OS_is_win),,-fvisibility=hidden -fvisibility-inlines-hidden)
+-DMKL_ILP64    := $(if $(filter mkl,$(BACKEND_CONFIG)),-DMKL_ILP64)
+-DMKL_LP64     := $(if $(filter mkl,$(BACKEND_CONFIG)),-DMKL_LP64)
+-Zl            := $(-Zl.$(COMPILER))
+-Zl_DPCPP      := $(-Zl.dpcpp)
 # if REQDBG set to 'symbols', it will disable assert checking.
 # Debug flags are defined per compiler in dev/make/compiler_definitions/ under -DEBC,
 # they are always enabled when the REQDBG flag is set.
--DEBC        := $(if $(REQDBG),$(if $(filter symbols,$(REQDBG)),$(-DEBC.$(COMPILER)),$(-DEBC.$(COMPILER)) -DDEBUG_ASSERT -DONEDAL_ENABLE_ASSERT)) -DTBB_SUPPRESS_DEPRECATED_MESSAGES -D__TBB_LEGACY_MODE
--DEBC_DPCPP  := $(if $(REQDBG),$(if $(filter symbols,$(REQDBG)),$(-DEBC.dpcpp),$(-DEBC.dpcpp) -DDEBUG_ASSERT -DONEDAL_ENABLE_ASSERT))
--DEBL        := $(if $(REQDBG),$(if $(OS_is_win),-debug,))
--DGCOV_BUILD := $(if $(filter yes,$(GCOV_ENABLED)),-DGCOV_BUILD)
+-DEBC          := $(if $(REQDBG),$(if $(filter symbols,$(REQDBG)),$(-DEBC.$(COMPILER)),$(-DEBC.$(COMPILER)) -DDEBUG_ASSERT -DONEDAL_ENABLE_ASSERT)) -DTBB_SUPPRESS_DEPRECATED_MESSAGES -D__TBB_LEGACY_MODE
+-DEBC_DPCPP    := $(if $(REQDBG),$(if $(filter symbols,$(REQDBG)),$(-DEBC.dpcpp),$(-DEBC.dpcpp) -DDEBUG_ASSERT -DONEDAL_ENABLE_ASSERT))
+-DEBL          := $(if $(REQDBG),$(if $(OS_is_win),-debug,))
+-DGCOV_BUILD   := $(if $(filter yes,$(GCOV_ENABLED)),-DGCOV_BUILD)
 # NOTE: only some compilers support other sanitizers, failure is expected by design in order to not
 # quietly hide the lack of support (e.g. gnu will fail with REQSAN=memory). The sanitizer must be
 # explicitly specified. ASan can be statically linked with special value "static", normal use of ASan set with REQSAN=address.
--sanitize    := $(if $(REQSAN),-fsanitize=$(if $(filter static,$(word 1,$(REQSAN))),address,$(REQSAN)) -fno-omit-frame-pointer)
--lsanitize   := $(if $(REQSAN),-fsanitize=$(if $(filter static,$(word 1,$(REQSAN))),address $(-asanstatic.$(COMPILER)),$(REQSAN)$(if $(filter address,$(word 1,$(REQSAN))), $(-asanshared.$(COMPILER)))))
--EHsc        := $(if $(OS_is_win),-EHsc,)
--isystem     := $(if $(OS_is_win),-I,-isystem)
--sGRP        := $(if $(OS_is_lnx),-Wl$(comma)--start-group,)
--eGRP        := $(if $(OS_is_lnx),-Wl$(comma)--end-group,)
+-sanitize      := $(if $(REQSAN),-fsanitize=$(if $(filter static,$(word 1,$(REQSAN))),address,$(REQSAN)) -fno-omit-frame-pointer)
+-lsanitize     := $(if $(REQSAN),-fsanitize=$(if $(filter static,$(word 1,$(REQSAN))),address $(-asanstatic.$(COMPILER)),$(REQSAN)$(if $(filter address,$(word 1,$(REQSAN))), $(-asanshared.$(COMPILER)))))
+-lsanitize.dpc := $(if $(REQSAN),-Xarch_host -fsanitize=$(if $(filter static,$(word 1,$(REQSAN))),address $(-asanstatic.dpcpp),$(REQSAN)$(if $(filter address,$(word 1,$(REQSAN))), $(-asanshared.dpcpp))))
+-EHsc          := $(if $(OS_is_win),-EHsc,)
+-isystem       := $(if $(OS_is_win),-I,-isystem)
+-sGRP          := $(if $(OS_is_lnx),-Wl$(comma)--start-group,)
+-eGRP          := $(if $(OS_is_lnx),-Wl$(comma)--end-group,)
 daalmake = make
 
 $(eval $(call set_uarch_options_for_compiler,$(COMPILER)))
@@ -237,31 +239,20 @@ TBBDIR.include := $(if $(TBBDIR.2),$(TBBDIR.2)/include/tbb $(TBBDIR.2)/include)
 
 TBBDIR.libia.prefix := $(TBBDIR.2)/lib
 
-OLD_TBB_LAYOUT := $(if $(wildcard $(call frompf1,$(TBBDIR.libia.prefix))/$(_IA)),yes,no)
 
-ifeq ($(OLD_TBB_LAYOUT),no)
-  TBBDIR.libia.win.vc1  := $(if $(OS_is_win),$(if $(wildcard $(call frompf1,$(TBBDIR.libia.prefix))/vc_mt),$(TBBDIR.libia.prefix)/vc_mt,$(if $(wildcard $(call frompf1,$(TBBDIR.libia.prefix))/vc14),$(TBBDIR.libia.prefix)/vc14)))
-else
-  TBBDIR.libia.win.vc1  := $(if $(OS_is_win),$(if $(wildcard $(call frompf1,$(TBBDIR.libia.prefix))/$(_IA)/vc_mt),$(TBBDIR.libia.prefix)/$(_IA)/vc_mt,$(if $(wildcard $(call frompf1,$(TBBDIR.libia.prefix))/$(_IA)/vc14),$(TBBDIR.libia.prefix)/$(_IA)/vc14)))
-endif
+TBBDIR.libia.win.vc1  := $(if $(OS_is_win),$(if $(wildcard $(call frompf1,$(TBBDIR.libia.prefix))/vc_mt),$(TBBDIR.libia.prefix)/vc_mt,$(if $(wildcard $(call frompf1,$(TBBDIR.libia.prefix))/vc14),$(TBBDIR.libia.prefix)/vc14)))
+
 TBBDIR.libia.win.vc2  := $(if $(OS_is_win),$(if $(TBBDIR.libia.win.vc1),,$(firstword $(filter $(call topf,$$TBBROOT)%,$(subst ;,$(space),$(call topf,$$LIB))))))
 TBBDIR.libia.win.vc22 := $(if $(OS_is_win),$(if $(TBBDIR.libia.win.vc2),$(wildcard $(TBBDIR.libia.win.vc2)/tbb12$(dtbb).dll)))
 
-ifeq ($(OLD_TBB_LAYOUT),no)
-  TBBDIR.libia.win:= $(if $(OS_is_win),$(if $(TBBDIR.libia.win.vc22),$(TBBDIR.libia.win.vc2),$(if $(TBBDIR.libia.win.vc1),$(TBBDIR.libia.win.vc1),$(error Can`t find TBB libs nether in $(call frompf,$(TBBDIR.libia.prefix))/vc_mt not in $(firstword $(filter $(TBBROOT)%,$(subst ;,$(space),$(LIB)))).))))
-  TBBDIR.libia.lnx.gcc1 := $(if $(OS_is_lnx),$(if $(wildcard $(TBBDIR.libia.prefix)/*),$(TBBDIR.libia.prefix)))
-else
-  TBBDIR.libia.win:= $(if $(OS_is_win),$(if $(TBBDIR.libia.win.vc22),$(TBBDIR.libia.win.vc2),$(if $(TBBDIR.libia.win.vc1),$(TBBDIR.libia.win.vc1),$(error Can`t find TBB libs nether in $(call frompf,$(TBBDIR.libia.prefix))/$(_IA)/vc_mt not in $(firstword $(filter $(TBBROOT)%,$(subst ;,$(space),$(LIB)))).))))
-  TBBDIR.libia.lnx.gcc1 := $(if $(OS_is_lnx),$(if $(wildcard $(TBBDIR.libia.prefix)/$(_IA)/gcc4.8/*),$(TBBDIR.libia.prefix)/$(_IA)/gcc4.8))
-endif
+TBBDIR.libia.win:= $(if $(OS_is_win),$(if $(TBBDIR.libia.win.vc22),$(TBBDIR.libia.win.vc2),$(if $(TBBDIR.libia.win.vc1),$(TBBDIR.libia.win.vc1),$(error Can`t find TBB libs nether in $(call frompf,$(TBBDIR.libia.prefix))/vc_mt not in $(firstword $(filter $(TBBROOT)%,$(subst ;,$(space),$(LIB)))).))))
+TBBDIR.libia.lnx.gcc1 := $(if $(OS_is_lnx),$(if $(wildcard $(TBBDIR.libia.prefix)/*),$(TBBDIR.libia.prefix)))
 
 TBBDIR.libia.lnx.gcc2  := $(if $(OS_is_lnx),$(if $(TBBDIR.libia.lnx.gcc1),,$(firstword $(filter $(TBBROOT)%,$(subst :,$(space),$(LD_LIBRARY_PATH))))))
 TBBDIR.libia.lnx.gcc22 := $(if $(OS_is_lnx),$(if $(TBBDIR.libia.lnx.gcc2),$(wildcard $(TBBDIR.libia.lnx.gcc2)/libtbb.so)))
-ifeq ($(OLD_TBB_LAYOUT),no)
-  TBBDIR.libia.lnx := $(if $(OS_is_lnx),$(if $(TBBDIR.libia.lnx.gcc22),$(TBBDIR.libia.lnx.gcc2),$(if $(TBBDIR.libia.lnx.gcc1),$(TBBDIR.libia.lnx.gcc1),$(error Can`t find TBB runtimes nether in $(TBBDIR.libia.prefix) not in $(firstword $(filter $(TBBROOT)%,$(subst :,$(space),$(LD_LIBRARY_PATH)))).))))
-else
-  TBBDIR.libia.lnx := $(if $(OS_is_lnx),$(if $(TBBDIR.libia.lnx.gcc22),$(TBBDIR.libia.lnx.gcc2),$(if $(TBBDIR.libia.lnx.gcc1),$(TBBDIR.libia.lnx.gcc1),$(error Can`t find TBB runtimes nether in $(TBBDIR.libia.prefix)/$(_IA)/gcc4.8 not in $(firstword $(filter $(TBBROOT)%,$(subst :,$(space),$(LD_LIBRARY_PATH)))).))))
-endif
+
+TBBDIR.libia.lnx := $(if $(OS_is_lnx),$(if $(TBBDIR.libia.lnx.gcc22),$(TBBDIR.libia.lnx.gcc2),$(if $(TBBDIR.libia.lnx.gcc1),$(TBBDIR.libia.lnx.gcc1),$(error Can`t find TBB runtimes nether in $(TBBDIR.libia.prefix) not in $(firstword $(filter $(TBBROOT)%,$(subst :,$(space),$(LD_LIBRARY_PATH)))).))))
+
 TBBDIR.libia.mac.clang1  := $(if $(OS_is_mac),$(if $(wildcard $(TBBDIR.libia.prefix)/*),$(TBBDIR.libia.prefix)))
 TBBDIR.libia.mac.clang2  := $(if $(OS_is_mac),$(if $(TBBDIR.libia.mac.clang1),,$(firstword $(filter $(TBBROOT)%,$(subst :,$(space),$(LIBRARY_PATH))))))
 TBBDIR.libia.mac.clang22 := $(if $(OS_is_mac),$(if $(TBBDIR.libia.mac.clang2),$(wildcard $(TBBDIR.libia.mac.clang2)/libtbb.dylib)))
@@ -270,23 +261,16 @@ TBBDIR.libia.mac := $(if $(OS_is_mac),$(if $(TBBDIR.libia.mac.clang22),$(TBBDIR.
 TBBDIR.libia := $(TBBDIR.libia.$(_OS))
 
 TBBDIR.soia.prefix := $(TBBDIR.2)/
-ifeq ($(OLD_TBB_LAYOUT),no)
-  TBBDIR.soia.win  := $(if $(OS_is_win),$(if $(TBBDIR.libia.win.vc22),$(TBBDIR.libia.win.vc2),$(if $(wildcard $(call frompf1,$(TBBDIR.soia.prefix))bin/vc_mt/*),$(TBBDIR.soia.prefix)bin/vc_mt,$(if $(wildcard $(call frompf1,$(TBBDIR.soia.prefix))bin/vc14/*),$(TBBDIR.soia.prefix)bin/vc14,$(error Can`t find TBB runtimes nether in $(TBBDIR.soia.prefix)bin/vc_mt not in $(firstword $(filter $(TBBROOT)%,$(subst ;,$(space),$(LIB)))).)))))
-else
-  TBBDIR.soia.win  := $(if $(OS_is_win),$(if $(TBBDIR.libia.win.vc22),$(TBBDIR.libia.win.vc2),$(if $(wildcard $(call frompf1,$(TBBDIR.soia.prefix))redist/$(_IA)/vc_mt/*),$(TBBDIR.soia.prefix)redist/$(_IA)/vc_mt,$(if $(wildcard $(call frompf1,$(TBBDIR.soia.prefix))redist/$(_IA)/vc14/*),$(TBBDIR.soia.prefix)redist/$(_IA)/vc14,$(error Can`t find TBB runtimes nether in $(TBBDIR.soia.prefix)redist/$(_IA)/vc_mt not in $(firstword $(filter $(TBBROOT)%,$(subst ;,$(space),$(LIB)))).)))))
-endif
+TBBDIR.soia.win  := $(if $(OS_is_win),$(if $(TBBDIR.libia.win.vc22),$(TBBDIR.libia.win.vc2),$(if $(wildcard $(call frompf1,$(TBBDIR.soia.prefix))bin/vc_mt/*),$(TBBDIR.soia.prefix)bin/vc_mt,$(if $(wildcard $(call frompf1,$(TBBDIR.soia.prefix))bin/vc14/*),$(TBBDIR.soia.prefix)bin/vc14,$(error Can`t find TBB runtimes nether in $(TBBDIR.soia.prefix)bin/vc_mt not in $(firstword $(filter $(TBBROOT)%,$(subst ;,$(space),$(LIB)))).)))))
+
 TBBDIR.soia.lnx  := $(if $(OS_is_lnx),$(TBBDIR.libia.lnx))
 TBBDIR.soia.mac  := $(if $(OS_is_mac),$(TBBDIR.libia.mac))
 TBBDIR.soia := $(TBBDIR.soia.$(_OS))
 
 RELEASEDIR.tbb       := $(RELEASEDIR)/tbb/latest
-ifeq ($(OLD_TBB_LAYOUT),no)
-  RELEASEDIR.tbb.libia := $(RELEASEDIR.tbb)/lib$(if $(OS_is_mac),,$(if $(OS_is_win),/vc_mt,/$(TBBDIR.libia.lnx.gcc)))
-  RELEASEDIR.tbb.soia  := $(if $(OS_is_win),$(RELEASEDIR.tbb)/bin/vc_mt,$(RELEASEDIR.tbb.libia))
-else
-  RELEASEDIR.tbb.libia := $(RELEASEDIR.tbb)/lib$(if $(OS_is_mac),,/$(_IA)$(if $(OS_is_win),/vc_mt,/$(TBBDIR.libia.lnx.gcc)))
-  RELEASEDIR.tbb.soia  := $(if $(OS_is_win),$(RELEASEDIR.tbb)/redist/$(_IA)/vc_mt,$(RELEASEDIR.tbb.libia))
-endif
+RELEASEDIR.tbb.libia := $(RELEASEDIR.tbb)/lib$(if $(OS_is_mac),,$(if $(OS_is_win),/vc_mt,/$(TBBDIR.libia.lnx.gcc)))
+RELEASEDIR.tbb.soia  := $(if $(OS_is_win),$(RELEASEDIR.tbb)/bin/vc_mt,$(RELEASEDIR.tbb.libia))
+
 releasetbb.LIBS_A := $(if $(OS_is_win),$(TBBDIR.libia)/tbb12$(dtbb).$(a) $(TBBDIR.libia)/tbbmalloc$(dtbb).$(a))
 releasetbb.LIBS_Y := $(TBBDIR.soia)/$(plib)tbb$(if $(OS_is_win),12$(dtbb),).$(y) $(TBBDIR.soia)/$(plib)tbbmalloc$(dtbb).$(y)                                                           \
                      $(if $(OS_is_lnx), $(if $(wildcard $(TBBDIR.soia)/libtbbmalloc.so.2),$(wildcard $(TBBDIR.soia)/libtbbmalloc.so.2))\
@@ -354,11 +338,9 @@ core_a       := $(plib)onedal_core$d.$a
 core_y       := $(plib)onedal_core$d$(if $(OS_is_win),.$(MAJORBINARY),).$y
 oneapi_a     := $(plib)onedal$d.$a
 oneapi_y     := $(plib)onedal$d$(if $(OS_is_win),.$(MAJORBINARY),).$y
-oneapi_a.dpc := $(plib)onedal_dpc$d.$a
 oneapi_y.dpc := $(plib)onedal_dpc$d$(if $(OS_is_win),.$(MAJORBINARY),).$y
 parameters_a     := $(plib)onedal_parameters$d.$a
 parameters_y     := $(plib)onedal_parameters$d$(if $(OS_is_win),.$(MAJORBINARY),).$y
-parameters_a.dpc := $(plib)onedal_parameters_dpc$d.$a
 parameters_y.dpc := $(plib)onedal_parameters_dpc$d$(if $(OS_is_win),.$(MAJORBINARY),).$y
 
 thr_tbb_a := $(plib)onedal_thread$d.$a
@@ -374,16 +356,19 @@ release.ONEAPI.LIBS_A := $(oneapi_a) \
                          $(if $(OS_is_win),$(foreach ilib,$(oneapi_a),$(ilib:%.lib=%_dll.lib)),)
 release.ONEAPI.LIBS_Y := $(oneapi_y)
 
-release.ONEAPI.LIBS_A.dpc := $(oneapi_a.dpc) \
-                             $(if $(OS_is_win),$(foreach ilib,$(oneapi_a.dpc),$(ilib:%.lib=%_dll.lib)),)
 release.ONEAPI.LIBS_Y.dpc := $(oneapi_y.dpc)
+ifdef OS_is_win
+release.ONEAPI.LIBS_Y.import.dpc := \
+    $(oneapi_y.dpc:.$(MAJORBINARY).dll=_dll.lib)
+endif
 
 release.PARAMETERS.LIBS_A := $(parameters_a) \
                          $(if $(OS_is_win),$(foreach ilib,$(parameters_a),$(ilib:%.lib=%_dll.lib)),)
 release.PARAMETERS.LIBS_Y := $(parameters_y)
 
-release.PARAMETERS.LIBS_A.dpc := $(parameters_a.dpc) \
-                             $(if $(OS_is_win),$(foreach ilib,$(parameters_a.dpc),$(ilib:%.lib=%_dll.lib)),)
+ifdef OS_is_win
+release.PARAMETERS.LIBS_Y.import.dpc := $(parameters_y.dpc:.$(MAJORBINARY).dll=_dll.lib)
+endif
 release.PARAMETERS.LIBS_Y.dpc := $(parameters_y.dpc)
 
 
@@ -594,9 +579,7 @@ ONEAPI.tmpdir_a := $(WORKDIR)/oneapi_static
 ONEAPI.tmpdir_y := $(WORKDIR)/oneapi_dynamic
 PARAMETERS.tmpdir_a := $(WORKDIR)/parameters_static
 PARAMETERS.tmpdir_y := $(WORKDIR)/parameters_dynamic
-ONEAPI.tmpdir_a.dpc := $(WORKDIR)/oneapi_dpc_static
 ONEAPI.tmpdir_y.dpc := $(WORKDIR)/oneapi_dpc_dynamic
-PARAMETERS.tmpdir_a.dpc := $(WORKDIR)/parameters_dpc_static
 PARAMETERS.tmpdir_y.dpc := $(WORKDIR)/parameters_dpc_dynamic
 
 ONEAPI.incdirs.common := $(CPPDIR)
@@ -639,10 +622,8 @@ ONEAPI.srcs.mangled.dpc := $(subst /,-,$(ONEAPI.srcs.dpc))
 
 ONEAPI.objs_a     := $(ONEAPI.srcs.mangled:%.cpp=$(ONEAPI.tmpdir_a)/%.$o)
 ONEAPI.objs_y     := $(ONEAPI.srcs.mangled:%.cpp=$(ONEAPI.tmpdir_y)/%.$o)
-ONEAPI.objs_a.dpc := $(ONEAPI.srcs.mangled.dpc:%.cpp=$(ONEAPI.tmpdir_a.dpc)/%.$o)
+
 ONEAPI.objs_y.dpc := $(ONEAPI.srcs.mangled.dpc:%.cpp=$(ONEAPI.tmpdir_y.dpc)/%.$o)
-ONEAPI.objs_a.all := $(ONEAPI.objs_a) $(ONEAPI.objs_a.dpc)
-ONEAPI.objs_y.all := $(ONEAPI.objs_y) $(ONEAPI.objs_y.dpc)
 
 # Populate _cpu files -> _cpu_%cpu_name%, where %cpu_name% is $(USECPUS.files)
 # $1 Output variable name
@@ -660,12 +641,12 @@ endef
 
 $(eval $(call .populate_cpus,ONEAPI.objs_a,$(ONEAPI.objs_a)))
 $(eval $(call .populate_cpus,ONEAPI.objs_y,$(ONEAPI.objs_y)))
-$(eval $(call .populate_cpus,ONEAPI.objs_a.dpc,$(ONEAPI.objs_a.dpc)))
+
+
 $(eval $(call .populate_cpus,ONEAPI.objs_y.dpc,$(ONEAPI.objs_y.dpc)))
 
 -include $(ONEAPI.tmpdir_a)/*.d
 -include $(ONEAPI.tmpdir_y)/*.d
--include $(ONEAPI.tmpdir_a.dpc)/*.d
 -include $(ONEAPI.tmpdir_y.dpc)/*.d
 
 # Declares target for object file compilation
@@ -702,8 +683,6 @@ $(ONEAPI.tmpdir_a)/inc_a_folders.txt: | $(ONEAPI.tmpdir_a)/.
 $(ONEAPI.tmpdir_y)/inc_y_folders.txt: | $(ONEAPI.tmpdir_y)/.
 	$(call WRITE.PREREQS,$(ONEAPI.include_options),$(space))
 
-$(ONEAPI.tmpdir_a.dpc)/inc_a_folders.txt: | $(ONEAPI.tmpdir_a.dpc)/.
-	$(call WRITE.PREREQS,$(ONEAPI.include_options),$(space))
 
 $(ONEAPI.tmpdir_y.dpc)/inc_y_folders.txt: | $(ONEAPI.tmpdir_y.dpc)/.
 	$(call WRITE.PREREQS,$(ONEAPI.include_options),$(space))
@@ -720,18 +699,6 @@ $(ONEAPI.objs_a): COPT += $(-fPIC) $(-cxx17) $(-optlevel) $(-Zl) $(-sanitize) $(
 
 $(eval $(call update_copt_from_dispatcher_tag,$(ONEAPI.objs_a)))
 
-$(ONEAPI.objs_a.dpc): $(ONEAPI.dispatcher_cpu) $(ONEAPI.tmpdir_a.dpc)/inc_a_folders.txt
-$(ONEAPI.objs_a.dpc): COPT += $(-fPIC) $(-cxx17) $(-optlevel.dpcpp) $(-Zl_DPCPP) $(-sanitize) $(-DMKL_ILP64) $(-DEBC_DPCPP) $(-EHsc) $(pedantic.opts.dpcpp) \
-                              -DDAAL_NOTHROW_EXCEPTIONS \
-                              -DDAAL_HIDE_DEPRECATED \
-                              -DONEDAL_DATA_PARALLEL \
-                              -D__TBB_NO_IMPLICIT_LINKAGE \
-                              -D_ENABLE_ATOMIC_ALIGNMENT_FIX \
-                              -DTBB_USE_ASSERT=0 \
-                               @$(ONEAPI.tmpdir_a.dpc)/inc_a_folders.txt
-
-$(eval $(call update_copt_from_dispatcher_tag,$(ONEAPI.objs_a.dpc),.dpcpp))
-
 # Set compilation options to the object files which are part of DYNAMIC lib
 $(ONEAPI.objs_y): $(ONEAPI.dispatcher_cpu) $(ONEAPI.tmpdir_y)/inc_y_folders.txt
 $(ONEAPI.objs_y): COPT += $(-fPIC) $(-cxx17) $(-optlevel) $(-Zl) $(-visibility) $(-sanitize) $(-DMKL_ILP64) $(-DEBC) $(-EHsc) $(pedantic.opts) \
@@ -746,11 +713,8 @@ $(ONEAPI.objs_y): COPT += $(-fPIC) $(-cxx17) $(-optlevel) $(-Zl) $(-visibility) 
 
 $(eval $(call update_copt_from_dispatcher_tag,$(ONEAPI.objs_y)))
 
-# Note: The libonedal_dpc.so library does not support debug mode.
-# When compiling with the debug flag $(-DEBC_DPCPP), linking with libonedal_dpc.so may cause indefinite linking times
-# due to the extensive processing of debug information. For debugging, please use the static library version (libonedal_dpc.a).
 $(ONEAPI.objs_y.dpc): $(ONEAPI.dispatcher_cpu) $(ONEAPI.tmpdir_y.dpc)/inc_y_folders.txt
-$(ONEAPI.objs_y.dpc): COPT += $(-fPIC) $(-cxx17) $(-optlevel.dpcpp) $(-Zl_DPCPP) $(-visibility) $(-sanitize) $(-DMKL_ILP64) $(-EHsc) $(pedantic.opts.dpcpp) \
+$(ONEAPI.objs_y.dpc): COPT += $(-fPIC) $(-cxx17) $(-optlevel.dpcpp) $(-Zl_DPCPP) $(-visibility) $(-sanitize) $(-DMKL_LP64) $(-EHsc) $(pedantic.opts.dpcpp) \
                               -DDAAL_NOTHROW_EXCEPTIONS \
                               -DDAAL_HIDE_DEPRECATED \
                               -DONEDAL_DATA_PARALLEL \
@@ -761,6 +725,10 @@ $(ONEAPI.objs_y.dpc): COPT += $(-fPIC) $(-cxx17) $(-optlevel.dpcpp) $(-Zl_DPCPP)
                               -DTBB_USE_ASSERT=0 \
                               @$(ONEAPI.tmpdir_y.dpc)/inc_y_folders.txt
 
+ifndef  OS_is_win
+$(ONEAPI.objs_y.dpc): COPT += $(-DEBC_DPCPP)
+endif
+
 $(eval $(call update_copt_from_dispatcher_tag,$(ONEAPI.objs_y.dpc),.dpcpp))
 
 # Filtering parameter files
@@ -768,8 +736,7 @@ PARAMETERS.objs_a.filtered := $(filter %parameters.$(o) %parameters_impl.$(o),$(
 ONEAPI.objs_a.filtered := $(filter-out %parameters.$(o) %parameters_impl.$(o),$(ONEAPI.objs_a))
 PARAMETERS.objs_y.filtered := $(filter %parameters.$(o) %parameters_impl.$(o),$(ONEAPI.objs_y))
 ONEAPI.objs_y.filtered := $(filter-out %parameters.$(o) %parameters_impl.$(o),$(ONEAPI.objs_y))
-PARAMETERS.objs_a.dpc.filtered := $(filter %parameters.$(o) %parameters_impl.$(o) %parameters_dpc.$(o),$(ONEAPI.objs_a.dpc))
-ONEAPI.objs_a.dpc.filtered := $(filter-out %parameters.$(o) %parameters_impl.$(o) %parameters_dpc.$(o),$(ONEAPI.objs_a.dpc))
+
 PARAMETERS.objs_y.dpc.filtered := $(filter %parameters.$(o) %parameters_impl.$(o) %parameters_dpc.$(o),$(ONEAPI.objs_y.dpc))
 ONEAPI.objs_y.dpc.filtered := $(filter-out %parameters.$(o) %parameters_impl.$(o) %parameters_dpc.$(o),$(ONEAPI.objs_y.dpc))
 
@@ -778,20 +745,15 @@ $(foreach x,$(ONEAPI.objs_a.filtered),$(eval $(call .ONEAPI.compile,$x,$(ONEAPI.
 $(foreach x,$(ONEAPI.objs_y.filtered),$(eval $(call .ONEAPI.compile,$x,$(ONEAPI.tmpdir_y),C)))
 $(foreach x,$(PARAMETERS.objs_a.filtered),$(eval $(call .ONEAPI.compile,$x,$(ONEAPI.tmpdir_a),C)))
 $(foreach x,$(PARAMETERS.objs_y.filtered),$(eval $(call .ONEAPI.compile,$x,$(ONEAPI.tmpdir_y),C)))
-$(foreach x,$(ONEAPI.objs_a.dpc.filtered),$(eval $(call .ONEAPI.compile,$x,$(ONEAPI.tmpdir_a.dpc),DPC)))
 $(foreach x,$(ONEAPI.objs_y.dpc.filtered),$(eval $(call .ONEAPI.compile,$x,$(ONEAPI.tmpdir_y.dpc),DPC)))
-$(foreach x,$(PARAMETERS.objs_a.dpc.filtered),$(eval $(call .ONEAPI.compile,$x,$(ONEAPI.tmpdir_a.dpc),DPC)))
 $(foreach x,$(PARAMETERS.objs_y.dpc.filtered),$(eval $(call .ONEAPI.compile,$x,$(ONEAPI.tmpdir_y.dpc),DPC)))
 
 # Create Host and DPC++ oneapi libraries
 ifeq ($(BUILD_PARAMETERS_LIB),yes)
 $(eval $(call .ONEAPI.declare_static_lib,$(WORKDIR.lib)/$(oneapi_a),$(ONEAPI.objs_a.filtered)))
-$(eval $(call .ONEAPI.declare_static_lib,$(WORKDIR.lib)/$(oneapi_a.dpc),$(ONEAPI.objs_a.dpc.filtered)))
 $(eval $(call .ONEAPI.declare_static_lib,$(WORKDIR.lib)/$(parameters_a),$(PARAMETERS.objs_a.filtered)))
-$(eval $(call .ONEAPI.declare_static_lib,$(WORKDIR.lib)/$(parameters_a.dpc),$(PARAMETERS.objs_a.dpc.filtered)))
 else
 $(eval $(call .ONEAPI.declare_static_lib,$(WORKDIR.lib)/$(oneapi_a),$(ONEAPI.objs_a)))
-$(eval $(call .ONEAPI.declare_static_lib,$(WORKDIR.lib)/$(oneapi_a.dpc),$(ONEAPI.objs_a.dpc)))
 endif
 
 ONEAPI.objs_y.lib := $(ONEAPI.objs_y.filtered)
@@ -799,7 +761,6 @@ ifeq ($(BUILD_PARAMETERS_LIB),no)
   ONEAPI.objs_y.lib += $(PARAMETERS.objs_y.filtered)
 endif
 
-# TODO: replace MKL usage with one of the suggested apporach in 'common.mk'.
 $(ONEAPI.tmpdir_y)/$(oneapi_y:%.$y=%_link.txt): \
     $(ONEAPI.objs_y.lib) $(if $(OS_is_win),$(ONEAPI.tmpdir_y)/dll.res,) | $(ONEAPI.tmpdir_y)/. ; $(WRITE.PREREQS)
 $(WORKDIR.lib)/$(oneapi_y): \
@@ -835,20 +796,22 @@ ifeq ($(BUILD_PARAMETERS_LIB),no)
   ONEAPI.objs_y.dpc.lib += $(PARAMETERS.objs_y.dpc.filtered)
 endif
 
-# TODO: replace MKL usage with one of the suggested apporach in 'common.mk'.
 $(ONEAPI.tmpdir_y.dpc)/$(oneapi_y.dpc:%.$y=%_link.txt): \
     $(ONEAPI.objs_y.dpc.lib) $(if $(OS_is_win),$(ONEAPI.tmpdir_y.dpc)/dll.res,) | $(ONEAPI.tmpdir_y.dpc)/. ; $(WRITE.PREREQS)
 $(WORKDIR.lib)/$(oneapi_y.dpc): \
-    $(daaldep.math_backend.shared_link_deps) \
     $(ONEAPI.tmpdir_y.dpc)/$(oneapi_y.dpc:%.$y=%_link.txt) ; $(DPC.LINK.DYNAMIC) ; $(LINK.DYNAMIC.POST)
 $(WORKDIR.lib)/$(oneapi_y.dpc): LOPT += $(-fPIC)
 $(WORKDIR.lib)/$(oneapi_y.dpc): LOPT += $(daaldep.rt.dpc)
-$(WORKDIR.lib)/$(oneapi_y.dpc): LOPT += $(if $(REQDBG),-flink-huge-device-code,)
-$(WORKDIR.lib)/$(oneapi_y.dpc): LOPT += $(-lsanitize)
+$(WORKDIR.lib)/$(oneapi_y.dpc): LOPT += $(if $(REQDBG),-flink-huge-device-code --offload-compress,)
+ifndef OS_is_win
+$(WORKDIR.lib)/$(oneapi_y.dpc): LOPT += $(-lsanitize.dpc)
+endif
 $(WORKDIR.lib)/$(oneapi_y.dpc): LOPT += $(if $(OS_is_win),-IMPLIB:$(@:%.$(MAJORBINARY).dll=%_dll.lib),)
 $(WORKDIR.lib)/$(oneapi_y.dpc): LOPT += $(if $(OS_is_win),$(WORKDIR.lib)/$(core_y:%.$(MAJORBINARY).dll=%_dll.lib))
 $(WORKDIR.lib)/$(oneapi_y.dpc): LOPT += $(if $(OS_is_win),sycl$d.lib)
-$(WORKDIR.lib)/$(oneapi_y.dpc): LOPT += $(daaldep.math_backend.dpc_link_deps)
+$(WORKDIR.lib)/$(oneapi_y.dpc): LOPT += \
+    $(daaldep.math_backend.dpc_link_deps) \
+    $(if $(OS_is_win),, -Wl,-rpath,'$$ORIGIN/../../..:$$ORIGIN/../../../')
 
 ifdef OS_is_win
 $(WORKDIR.lib)/$(oneapi_y.dpc:%.$(MAJORBINARY).dll=%_dll.lib): $(WORKDIR.lib)/$(oneapi_y.dpc)
@@ -858,14 +821,21 @@ ifeq ($(BUILD_PARAMETERS_LIB),yes)
 $(ONEAPI.tmpdir_y.dpc)/$(parameters_y.dpc:%.$y=%_link.txt): \
     $(PARAMETERS.objs_y.dpc.filtered) $(if $(OS_is_win),$(ONEAPI.tmpdir_y.dpc)/dll.res,) | $(ONEAPI.tmpdir_y.dpc)/. ; $(WRITE.PREREQS)
 $(WORKDIR.lib)/$(parameters_y.dpc): \
-    $(WORKDIR.lib)/$(oneapi_y.dpc) $(daaldep.ipp) $(daaldep.vml) $(daaldep.mkl) \
+    $(WORKDIR.lib)/$(oneapi_y.dpc) \
     $(ONEAPI.tmpdir_y.dpc)/$(parameters_y.dpc:%.$y=%_link.txt) ; $(DPC.LINK.DYNAMIC) ; $(LINK.DYNAMIC.POST)
 $(WORKDIR.lib)/$(parameters_y.dpc): LOPT += $(-fPIC)
 $(WORKDIR.lib)/$(parameters_y.dpc): LOPT += $(daaldep.rt.dpc)
-$(WORKDIR.lib)/$(parameters_y.dpc): LOPT += $(-lsanitize)
+$(WORKDIR.lib)/$(parameters_y.dpc): LOPT += $(if $(REQDBG),-flink-huge-device-code --offload-compress,)
+ifndef OS_is_win
+$(WORKDIR.lib)/$(parameters_y.dpc): LOPT += $(-lsanitize.dpc)
+endif
 $(WORKDIR.lib)/$(parameters_y.dpc): LOPT += $(if $(OS_is_win),-IMPLIB:$(@:%.$(MAJORBINARY).dll=%_dll.lib),)
 $(WORKDIR.lib)/$(parameters_y.dpc): LOPT += $(if $(OS_is_win),$(WORKDIR.lib)/$(core_y:%.$(MAJORBINARY).dll=%_dll.lib))
 $(WORKDIR.lib)/$(parameters_y.dpc): LOPT += $(if $(OS_is_win), $(if $(libsycl),$(libsycl),$(libsycl.default)))
+$(WORKDIR.lib)/$(parameters_y.dpc): LOPT += \
+    $(daaldep.math_backend.dpc_link_deps) \
+    $(if $(OS_is_win),, -Wl,-rpath,'$$ORIGIN/../../..:$$ORIGIN/../../../')
+
 ifdef OS_is_win
 $(WORKDIR.lib)/$(parameters_y.dpc:%.$(MAJORBINARY).dll=%_dll.lib): $(WORKDIR.lib)/$(parameters_y.dpc)
 endif
@@ -957,7 +927,7 @@ _parameters_c: info.building.parameters.C++.part
 _parameters_c: $(WORKDIR.lib)/$(parameters_a) $(WORKDIR.lib)/$(parameters_y)
 
 _parameters_dpc: info.building.parameters.DPC++.part
-_parameters_dpc: $(WORKDIR.lib)/$(parameters_a.dpc) $(WORKDIR.lib)/$(parameters_y.dpc)
+_parameters_dpc: $(WORKDIR.lib)/$(parameters_y.dpc)
 
 _release_parameters_c: _parameters_c
 _release_parameters_dpc: _parameters_dpc
@@ -970,7 +940,7 @@ _oneapi_c: info.building.oneapi.C++.part
 _oneapi_c: $(WORKDIR.lib)/$(oneapi_a) $(WORKDIR.lib)/$(oneapi_y)
 
 _oneapi_dpc: info.building.oneapi.DPC++.part
-_oneapi_dpc: $(WORKDIR.lib)/$(oneapi_a.dpc) $(WORKDIR.lib)/$(oneapi_y.dpc)
+_oneapi_dpc: $(WORKDIR.lib)/$(oneapi_y.dpc)
 
 _release_oneapi_c: _release_oneapi_c_h
 _release_oneapi_dpc: _release_oneapi_c
@@ -1015,13 +985,11 @@ $(foreach x,$(release.LIBS_A),$(eval $(call .release.a,$x,$(RELEASEDIR.libia),_r
 $(foreach x,$(release.LIBS_Y),$(eval $(call .release.y_link,$x,$(RELEASEDIR.soia),_release_c)))
 $(foreach x,$(release.ONEAPI.LIBS_A),$(eval $(call .release.a,$x,$(RELEASEDIR.libia),_release_oneapi_c)))
 $(foreach x,$(release.ONEAPI.LIBS_Y),$(eval $(call .release.y_link,$x,$(RELEASEDIR.soia),_release_oneapi_c)))
-$(foreach x,$(release.ONEAPI.LIBS_A.dpc),$(eval $(call .release.a,$x,$(RELEASEDIR.libia),_release_oneapi_dpc)))
 $(foreach x,$(release.ONEAPI.LIBS_Y.dpc),$(eval $(call .release.y_link,$x,$(RELEASEDIR.soia),_release_oneapi_dpc)))
 
 ifeq ($(BUILD_PARAMETERS_LIB),yes)
 $(foreach x,$(release.PARAMETERS.LIBS_A),$(eval $(call .release.a,$x,$(RELEASEDIR.libia),_release_parameters_c)))
 $(foreach x,$(release.PARAMETERS.LIBS_Y),$(eval $(call .release.y_link,$x,$(RELEASEDIR.soia),_release_parameters_c)))
-$(foreach x,$(release.PARAMETERS.LIBS_A.dpc),$(eval $(call .release.a,$x,$(RELEASEDIR.libia),_release_parameters_dpc)))
 $(foreach x,$(release.PARAMETERS.LIBS_Y.dpc),$(eval $(call .release.y_link,$x,$(RELEASEDIR.soia),_release_parameters_dpc)))
 endif
 endif
@@ -1031,13 +999,13 @@ $(foreach x,$(release.LIBS_A),$(eval $(call .release.a_win,$x,$(RELEASEDIR.libia
 $(foreach x,$(release.LIBS_Y),$(eval $(call .release.y_win,$x,$(RELEASEDIR.soia),_release_c)))
 $(foreach x,$(release.ONEAPI.LIBS_A),$(eval $(call .release.a_win,$x,$(RELEASEDIR.libia),_release_oneapi_c)))
 $(foreach x,$(release.ONEAPI.LIBS_Y),$(eval $(call .release.y_win,$x,$(RELEASEDIR.soia),_release_oneapi_c)))
-$(foreach x,$(release.ONEAPI.LIBS_A.dpc),$(eval $(call .release.a_win,$x,$(RELEASEDIR.libia),_release_oneapi_dpc)))
+$(foreach x,$(release.ONEAPI.LIBS_Y.import.dpc),$(eval $(call .release.a_win,$x,$(RELEASEDIR.libia),_release_oneapi_dpc)))
 $(foreach x,$(release.ONEAPI.LIBS_Y.dpc),$(eval $(call .release.y_win,$x,$(RELEASEDIR.soia),_release_oneapi_dpc)))
 
 ifeq ($(BUILD_PARAMETERS_LIB),yes)
 $(foreach x,$(release.PARAMETERS.LIBS_A),$(eval $(call .release.a_win,$x,$(RELEASEDIR.libia),_release_parameters_c)))
 $(foreach x,$(release.PARAMETERS.LIBS_Y),$(eval $(call .release.y_win,$x,$(RELEASEDIR.soia),_release_parameters_c)))
-$(foreach x,$(release.PARAMETERS.LIBS_A.dpc),$(eval $(call .release.a_win,$x,$(RELEASEDIR.libia),_release_parameters_dpc)))
+$(foreach x,$(release.PARAMETERS.LIBS_Y.import.dpc),$(eval $(call .release.a_win,$x,$(RELEASEDIR.libia),_release_parameters_dpc)))
 $(foreach x,$(release.PARAMETERS.LIBS_Y.dpc),$(eval $(call .release.y_win,$x,$(RELEASEDIR.soia),_release_parameters_dpc)))
 endif
 endif

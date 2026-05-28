@@ -29,7 +29,6 @@ For each algorithm |short_name| provides several code paths for x86-64-compatibl
 Following extensions are currently supported:
 
 - Intel\ |reg|\  Streaming SIMD Extensions 2 (Intel\ |reg|\  SSE2)
-- Intel\ |reg|\  Streaming SIMD Extensions 4.2 (Intel\ |reg|\  SSE4.2)
 - Intel\ |reg|\  Advanced Vector Extensions 2 (Intel\ |reg|\  AVX2)
 - Intel\ |reg|\  Advanced Vector Extensions 512 (Intel\ |reg|\  AVX-512)
 
@@ -220,14 +219,12 @@ The values for ``DAAL_FPTYPE`` macro replacement are ``float`` and ``double``, r
 The values for ``cpu`` file name part replacement are:
 
 - ``nrh`` for Intel\ |reg|\  SSE2 architecture, which stands for Northwood,
-- ``neh`` for Intel\ |reg|\  SSE4.2 architecture, which stands for Nehalem,
 - ``hsw`` for Intel\ |reg|\  AVX2 architecture, which stands for Haswell,
 - ``skx`` for Intel\ |reg|\  AVX-512 architecture, which stands for Skylake-X.
 
 The values for ``DAAL_CPU`` macro replacement are:
 
 - ``__sse2__`` for Intel\ |reg|\  SSE2 architecture,
-- ``__sse42__`` for Intel\ |reg|\  SSE4.2 architecture,
 - ``__avx2__`` for Intel\ |reg|\  AVX2 architecture,
 - ``__avx512__`` for Intel\ |reg|\  AVX-512 architecture.
 
@@ -278,8 +275,10 @@ file contains the compiler options for the GNU compiler for x86-64 architecture 
 Bazel
 -----
 
-For now, Bazel build is supported only for Linux x86-64 platform
-It provides ``cpu`` `option <https://github.com/uxlfoundation/oneDAL/tree/main/dev/bazel#bazel-options>`_
+Bazel build supports Linux x86-64 and regular CPU builds with the MSVC
+compiler on Windows x86-64. ICX and DPC++/SYCL Bazel support on Windows are
+tracked separately and are not enabled yet. Bazel provides the ``cpu``
+`option <https://github.com/uxlfoundation/oneDAL/tree/main/dev/bazel#bazel-options>`_
 that allows to specify the list of target architectural extensions.
 
 To add a new architectural extension into Bazel configuration, following steps should be done:
