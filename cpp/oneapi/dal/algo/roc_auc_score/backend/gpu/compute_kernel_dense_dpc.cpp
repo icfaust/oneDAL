@@ -53,10 +53,15 @@ double compute_roc_auc_score(sycl::queue& queue,
                     // STEP 1
                     auto row_count = y1.get_dimension(0);
 
+                    // Create an arange ndarray before sorting
+                    auto idx = pr::ndarray<std::uint32_t, 1>::empty(queue, {row_count}, sycl::usm::alloc::device);
+                    auto fillenv = idx.arange(queue, deps);
+		   
+
                     // sort y1 data using key value pairs (sort primitive) to get y0 and y1 in y1 ascending order
                     // this complicates/inverts some of the logic in calculating roc_auc_score but improves perf
                     // do not use dpl version due to hardware limitations
-                    pr::radix_sort_indices_inplace<Float, Float>(queue)(y1, y0, deps).wait_and_throw();
+                    pr::radix_sort_indices_inplace<Float, Float>(queue)(y1, y0, {fillenv}).wait_and_throw();
 
                     // STEP 2
                     // done as integer to prevent rank incrementing problems at higher float values     
