@@ -41,7 +41,8 @@ static result_t call_daal_kernel(const context_cpu& ctx,
     const auto daal_y0 = interop::convert_to_daal_table<Float>(y0);
     const auto daal_y1 = interop::convert_to_daal_table<Float>(y1);
 
-    double score = daal::data_management::internal::rocAucScore<Float>(*daal_y0.get(), *daal_y1.get());
+    // rocAucScore takes NumericTablePtr, which is a bit unusual
+    double score = daal::data_management::internal::rocAucScore<Float>(daal_y0, daal_y1);
     return result_t().set_score(score);
 }
 

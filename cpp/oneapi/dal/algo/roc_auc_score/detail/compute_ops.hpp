@@ -53,7 +53,7 @@ struct compute_ops {
             throw domain_error(msg::input_data_is_empty());
         }
         if (input.get_y0().get_row_count() != input.get_y1().get_row_count()) {
-            throw domain_error(msg::input_data_row_count_not_match());
+            throw domain_error(msg::input_data_rc_neq_input_responses_rc());
         }
     }
 
