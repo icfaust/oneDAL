@@ -55,16 +55,28 @@ double compute_roc_auc_score(sycl::queue& queue,
 
                     // Create an arange ndarray before sorting
                     auto idx = pr::ndarray<std::uint32_t, 1>::empty(queue, {row_count}, sycl::usm::alloc::device);
+                    auto y0_sorted = pr::ndarray<Float, 1>::empty(queue, {row_count}, sycl::usm::alloc::device);
                     auto fillenv = idx.arange(queue, deps);
-		   
 
                     // sort y1 data using key value pairs (sort primitive) to get y0 and y1 in y1 ascending order
                     // this complicates/inverts some of the logic in calculating roc_auc_score but improves perf
                     // do not use dpl version due to hardware limitations
-                    pr::radix_sort_indices_inplace<Float, Float>(queue)(y1, y0, {fillenv}).wait_and_throw();
+                    pr::radix_sort_indices_inplace<Float>(queue)(y1, idx, {fillenv}).wait_and_throw();
+
+		    // Gather y0 using idx
+                    const std::uint32_t* idx_ptr = idx.get_data();
+		    const Float* y0_ptr = y0.get_data();
+                    Float* y0_sorted_ptr = y0_sorted.get_mutable_data();
+                    queue.parallel_for(sycl::range<1>(row_count), [=](sycl::id<1> i) {
+                        y0_sorted_ptr[i] = y0_ptr[idx_ptr[i]];
+                    }).wait_and_throw();
+
+		    // reassign y0 as its no longer necessary (making consistent with y1 inplace sort convention)
+                    y0 = y0_sorted;
+		    y0_ptr = const_cast<const Float*>(y0_sorted_ptr);
 
                     // STEP 2
-                    // done as integer to prevent rank incrementing problems at higher float values     
+                    // done as integer to prevent rank incrementing problems at higher float values
                     auto [diff, allocenv] = pr::ndarray<std::uint32_t, 1>::ones(queue, {row_count}, sycl::usm::alloc::device);
 
                     auto base = y0.get_slice(0, row_count - 1);
@@ -93,7 +105,6 @@ double compute_roc_auc_score(sycl::queue& queue,
                     // pressure.
                     // first extract necessary pointers from the data
                     Float* ps_ptr = ps.get_mutable_data();
-                    const Float* y0_ptr = y0.get_data();
 
                     // look in array and find rank location in the 2d array, and then select tps or fps based on y0 value
                     queue.parallel_for(sycl::range<1>(total_ranks), [=](sycl::id<1> i) {
