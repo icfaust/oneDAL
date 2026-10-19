@@ -61,8 +61,9 @@ def _find_tools_icx(repo_ctx):
     # Use `icx.exe` (clang-cl driver) for C and C++/DPC++ compile.
     # For host link, call `lld-link.exe` (or link.exe) DIRECTLY rather
     # than going through the icx driver — mirrors makefile common.mk:125
-    # (`link.dynamic.win = link ...`) and Linux's dynamic_link_lnx.tpl.sh
-    # wrapper. Going through icx for huge link actions caused LNK1170:
+    # (`link.dynamic.win = link ...`). Linux has no equivalent: there the
+    # driver is the linker. Going through icx for huge link actions caused
+    # LNK1170:
     # icx materialised every Bazel-line arg into a single >131071-char
     # line in its own intermediate response file before invoking link.exe.
     cc_path, _ = _find_tool(repo_ctx, "icx", mandatory = True)
@@ -211,14 +212,13 @@ def _configure_cc_toolchain_win_icx(repo_ctx, reqs):
     # do not inherit the shell `LIB`, so pass it through via the toolchain
     # env_entries (see cc_toolchain_config_win.bzl — `msvc_env_feature`).
     link_flags_cc = []
+    # NOTE: the SYCL runtime import library is not listed here — it depends on
+    # the MSVC runtime (`sycl.lib` vs `sycld.lib`, see makefile:811), which is
+    # a per-build toolchain feature rather than a repository-time constant.
+    # `cc_toolchain_config_win.bzl` adds it via the `runtime_library` feature.
     link_flags_dpcc = ([
         "-fsycl",
         "-fsycl-device-code-split={}".format(dpcc_code_split),
-        # The icx driver does not add the SYCL runtime import library for
-        # Bazel's DLL link path when most device objects are supplied through
-        # a /WHOLEARCHIVE static library. Link it explicitly so generated
-        # registration thunks resolve __sycl_{,un}register_lib on Windows.
-        "sycl.lib",
     ]) if tools.is_dpc_found else []
 
     repo_ctx.template(

@@ -104,6 +104,7 @@ enum class PairwiseDistanceType
     euclidean,
     chebyshev,
     cosine,
+    manhattan,
 };
 
 template <typename FPType, CpuType cpu>
@@ -315,10 +316,7 @@ public:
         const size_t blockSize = 512;
         const size_t nBlocks   = n / blockSize + !!(n % blockSize);
 
-        SafeStatus safeStat;
-
-        for (size_t iBlock = 0; iBlock < nBlocks; ++iBlock)
-        {
+        auto finalizeBlock = [=](size_t iBlock) {
             const size_t begin = iBlock * blockSize;
             const size_t end   = services::internal::min<cpu, size_t>(begin + blockSize, n);
             const size_t count = end - begin;
@@ -328,7 +326,29 @@ public:
                 a[i] = services::internal::max<cpu, FPType>(FPType(0), a[i]);
             }
             MathInst<FPType, cpu>::vSqrt(count, a + begin, a + begin);
+        };
+
+        // One task per 32k entries. Inside a parallel region `threader_for_optional` runs serially,
+        // so a caller's thread-local buffers stay valid.
+        const size_t blocksPerTask = 64;
+        const size_t nTasks        = nBlocks / blocksPerTask + !!(nBlocks % blocksPerTask);
+        if (nTasks < 2)
+        {
+            for (size_t iBlock = 0; iBlock < nBlocks; ++iBlock)
+            {
+                finalizeBlock(iBlock);
+            }
+            return services::Status();
         }
+
+        daal::threader_for_optional(static_cast<int64_t>(nTasks), 1, [&](int64_t iTask) {
+            const size_t firstBlock = static_cast<size_t>(iTask) * blocksPerTask;
+            const size_t lastBlock  = services::internal::min<cpu, size_t>(firstBlock + blocksPerTask, nBlocks);
+            for (size_t iBlock = firstBlock; iBlock < lastBlock; ++iBlock)
+            {
+                finalizeBlock(iBlock);
+            }
+        });
         return services::Status();
     }
 
@@ -354,7 +374,7 @@ public:
         const size_t blockSize = 256;
         const size_t nBlocks   = nRowsA / blockSize + (nRowsA % blockSize > 0);
 
-        daal::threader_for(nBlocks, nBlocks, [&](size_t iBlock) {
+        daal::threader_for(nBlocks, 1, [&](size_t iBlock) {
             const size_t i1    = iBlock * blockSize;
             const size_t i2    = (iBlock + 1 == nBlocks ? nRowsA : i1 + blockSize);
             const size_t iSize = i2 - i1;
@@ -376,7 +396,7 @@ protected:
 
         SafeStatus safeStat;
 
-        daal::threader_for(nBlocks, nBlocks, [&](size_t iBlock) {
+        daal::threader_for(nBlocks, 1, [&](size_t iBlock) {
             size_t begin = iBlock * blockSize;
             size_t end   = services::internal::min<cpu, size_t>(begin + blockSize, nRows);
 

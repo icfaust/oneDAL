@@ -85,6 +85,7 @@ public:
     MSG(unsupported_data_layout);
     MSG(unsupported_data_type);
     MSG(unsupported_device_type);
+    MSG(sve_not_supported);
     MSG(unsupported_feature_type);
     MSG(unsupported_usm_alloc);
     MSG(page_size_leq_zero);
@@ -105,6 +106,8 @@ public:
     /* Tables */
     MSG(alloc_kinds_of_chunks_do_not_match);
     MSG(alloc_kinds_of_arrays_do_not_match);
+    MSG(queues_of_arrays_do_not_match);
+    MSG(queues_of_chunks_do_not_match);
     MSG(allocated_memory_size_is_not_enough_to_copy_data);
     MSG(cannot_get_data_type_from_empty_metadata);
     MSG(cannot_get_feature_type_from_empty_metadata);
@@ -230,6 +233,21 @@ public:
     MSG(kmeans_init_plus_plus_dense_method_is_not_implemented_for_gpu);
     MSG(objective_function_value_lt_zero);
 
+    /* HDBSCAN */
+    MSG(hdbscan_metric_not_compatible_with_kd_tree);
+    MSG(hdbscan_min_cluster_size_lt_two);
+    MSG(hdbscan_min_samples_lt_one);
+    MSG(hdbscan_minkowski_degree_leq_zero);
+    MSG(hdbscan_kd_tree_method_is_not_implemented_for_gpu);
+    MSG(hdbscan_cluster_selection_epsilon_lt_zero);
+    MSG(hdbscan_max_cluster_size_lt_zero);
+    MSG(hdbscan_alpha_leq_zero);
+    MSG(hdbscan_leaf_size_lt_one);
+    MSG(hdbscan_distance_block_size_lt_zero);
+    MSG(hdbscan_brute_force_matrix_does_not_fit_on_device);
+    MSG(hdbscan_input_data_is_not_finite);
+    MSG(hdbscan_single_linkage_tree_needs_float64);
+
     /* k-NN */
     MSG(knn_kd_tree_method_is_not_implemented_for_gpu);
     MSG(knn_regression_task_is_not_implemented_for_cpu);
@@ -314,6 +332,8 @@ public:
     MSG(polynomial_kernel_is_not_implemented_for_gpu);
     MSG(sigmoid_kernel_is_not_implemented_for_gpu);
     MSG(sigma_leq_zero);
+    MSG(svm_csr_table_is_not_implemented_for_gpu);
+    MSG(svm_multiclass_model_not_implemented_for_gpu);
     MSG(svm_multiclass_not_implemented_for_gpu);
     MSG(svm_nu_classification_task_is_not_implemented_for_gpu);
     MSG(svm_nu_regression_task_is_not_implemented_for_gpu);

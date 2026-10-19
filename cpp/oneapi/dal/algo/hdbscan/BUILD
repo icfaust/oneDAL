@@ -1,0 +1,70 @@
+package(default_visibility = ["//visibility:public"])
+load("@onedal//dev/bazel:dal.bzl",
+    "dal_module",
+    "dal_test_suite",
+)
+
+dal_module(
+    name = "hdbscan",
+    auto = True,
+    dal_deps = [
+        "@onedal//cpp/oneapi/dal:core",
+        "@onedal//cpp/oneapi/dal/backend/primitives:common",
+        "@onedal//cpp/oneapi/dal/backend/primitives:distance",
+        "@onedal//cpp/oneapi/dal/backend/primitives:reduction",
+        "@onedal//cpp/oneapi/dal/backend/primitives:search",
+        "@onedal//cpp/oneapi/dal/backend/primitives:selection",
+        "@onedal//cpp/oneapi/dal/backend/primitives:sort",
+    ],
+    extra_deps = [
+        "@onedal//cpp/daal/src/algorithms/hdbscan:kernel",
+    ],
+)
+
+dal_test_suite(
+    name = "interface_tests",
+    framework = "catch2",
+    hdrs = glob([
+        "test/*.hpp",
+    ]),
+    srcs = glob([
+        "test/*.cpp",
+    ]),
+    dal_deps = [
+        ":hdbscan",
+    ],
+)
+
+dal_test_suite(
+    name = "gpu_tests",
+    framework = "catch2",
+    private = True,
+    compile_as = [ "dpc++" ],
+    srcs = glob([
+        "backend/gpu/test/*_dpc.cpp",
+    ]),
+    dal_deps = [
+        ":hdbscan",
+    ],
+)
+
+dal_test_suite(
+    name = "cpu_tests",
+    framework = "catch2",
+    private = True,
+    srcs = glob([
+        "backend/cpu/test/*.cpp",
+    ]),
+    dal_deps = [
+        ":hdbscan",
+    ],
+)
+
+dal_test_suite(
+    name = "tests",
+    tests = [
+        ":cpu_tests",
+        ":gpu_tests",
+        ":interface_tests",
+    ],
+)
