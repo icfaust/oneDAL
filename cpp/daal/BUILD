@@ -119,9 +119,13 @@ daal_module(
     ]) + [
         ":version",
     ],
+    # Builds with --simd_sort=false or a non-x86 target never fetch @simd_sort.
     deps = [
         ":includes",
-    ],
+    ] + select({
+        "@config//:simd_sort_enabled": [ "@simd_sort//:headers" ],
+        "//conditions:default": [],
+    }),
 )
 
 daal_module(
