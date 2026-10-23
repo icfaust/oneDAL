@@ -23,13 +23,12 @@
 
 #include "oneapi/dal/algo/decision_forest/train_types.hpp"
 #include "oneapi/dal/algo/decision_forest/backend/cpu/train_kernel.hpp"
+#include "oneapi/dal/backend/primitives/rng/rng_types.hpp"
 
 #include "oneapi/dal/table/row_accessor.hpp"
 #include "oneapi/dal/backend/interop/common.hpp"
 #include "oneapi/dal/backend/interop/error_converter.hpp"
 #include "oneapi/dal/backend/interop/table_conversion.hpp"
-#include "oneapi/dal/backend/primitives/rng/host_engine.hpp"
-#include "oneapi/dal/backend/primitives/rng/rng_types.hpp"
 #include "oneapi/dal/algo/decision_forest/backend/model_impl.hpp"
 
 namespace oneapi::dal::decision_forest::backend {
@@ -105,9 +104,7 @@ static result_t call_daal_kernel(const context_cpu& ctx,
         dal::detail::integral_cast<std::size_t>(desc.get_max_tree_depth());
     daal_parameter.minObservationsInLeafNode =
         dal::detail::integral_cast<std::size_t>(desc.get_min_observations_in_leaf_node());
-    daal_parameter.engine =
-        pr::host_engine(desc.get_seed(), pr::convert_engine_method(desc.get_engine_type()))
-            .get_daal_engine();
+    daal_parameter.engine = pr::make_daal_engine(desc.get_seed(), desc.get_engine_type());
     daal_parameter.impurityThreshold = desc.get_impurity_threshold();
     daal_parameter.memorySavingMode = desc.get_memory_saving_mode();
     daal_parameter.bootstrap = desc.get_bootstrap();
