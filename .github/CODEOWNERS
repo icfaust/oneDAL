@@ -15,9 +15,9 @@ samples/       @maria-Petrova @Alexandr-Solovev @Vika-F @ethanglaser @icfaust @d
 examples/      @maria-Petrova @Alexandr-Solovev @Vika-F @ethanglaser @icfaust @david-cortes-intel
 
 # Infrastructure and tools
-.ci/           @napetrov @homksei @ahuber21 @ethanglaser @icfaust
-.github/       @napetrov @homksei @ahuber21 @ethanglaser @icfaust
-.bazelversion  @napetrov @homksei @ahuber21 @ethanglaser @icfaust
+.ci/           @napetrov @homksei @ethanglaser @icfaust
+.github/       @napetrov @homksei @ethanglaser @icfaust
+.bazelversion  @napetrov @homksei @ethanglaser @icfaust
 
 # Build & dev infrastructure
 make*          @Alexandr-Solovev
