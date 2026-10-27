@@ -15,15 +15,15 @@ samples/       @maria-Petrova @Alexandr-Solovev @Vika-F @ethanglaser @icfaust @d
 examples/      @maria-Petrova @Alexandr-Solovev @Vika-F @ethanglaser @icfaust @david-cortes-intel #green
 
 # Infrastructure and tools
-.ci/           @napetrov @homksei @ahuber21 @ethanglaser @icfaust #yellow
-.github/       @napetrov @homksei @ahuber21 @ethanglaser @icfaust #yellow
-.bazelversion  @napetrov @homksei @ahuber21 @ethanglaser @icfaust #yellow
+.ci/           @napetrov @homksei @ethanglaser @icfaust #yellow
+.github/       @napetrov @homksei @ethanglaser @icfaust #yellow
+.bazelversion  @napetrov @homksei @ethanglaser @icfaust #yellow
 
 # Build & dev infrastructure
 make*          @Alexandr-Solovev #yellow
 cmake/         @Alexandr-Solovev #yellow
-deploy/        @homksei @ahuber21 @ethanglaser #yellow
-dev/           @homksei @ahuber21 @ethanglaser #yellow
+deploy/        @homksei @ethanglaser #yellow
+dev/           @homksei @ethanglaser #yellow
 dev/bazel/     @Alexandr-Solovev #yellow
 MODULE.bazel*  @Alexandr-Solovev @napetrov @homksei @ahuber21 @ethanglaser @icfaust #yellow
 
