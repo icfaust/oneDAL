@@ -1,0 +1,245 @@
+.. Copyright contributors to the oneDAL project
+..
+.. Licensed under the Apache License, Version 2.0 (the "License");
+.. you may not use this file except in compliance with the License.
+.. You may obtain a copy of the License at
+..
+..     http://www.apache.org/licenses/LICENSE-2.0
+..
+.. Unless required by applicable law or agreed to in writing, software
+.. distributed under the License is distributed on an "AS IS" BASIS,
+.. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.. See the License for the specific language governing permissions and
+.. limitations under the License.
+
+.. highlight:: cpp
+.. default-domain:: cpp
+
+.. _alg_hdbscan:
+
+=======
+HDBSCAN
+=======
+
+.. include:: ../../../includes/clustering/hdbscan-introduction.rst
+
+------------------------
+Mathematical formulation
+------------------------
+
+.. _hdbscan_c_math:
+
+Computation
+-----------
+
+Given the set :math:`X = \{x_1 = (x_{11}, \ldots, x_{1p}), \ldots, x_n = (x_{n1}, \ldots, x_{np})\}`
+of :math:`n` :math:`p`-dimensional feature vectors, a ``metric`` for pairwise distance computation,
+and positive integers ``min_cluster_size`` and ``min_samples``, the problem is to compute cluster
+assignments for each observation.
+
+.. _hdbscan_c_math_metrics:
+
+Supported distance metrics
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The pairwise distance used for core-distance and mutual-reachability computation
+is selected via the ``metric`` parameter. HDBSCAN reuses the
+:ref:`Minkowski distances <alg_minkowski_distance>` family with configurable
+``degree`` :math:`p > 0`: ``degree = 1`` yields the Manhattan (:math:`L_1`)
+distance, ``degree = 2`` yields the Euclidean (:math:`L_2`, default) distance,
+and the limit :math:`p \to \infty` corresponds to the
+:ref:`Chebyshev distance <alg_chebyshev_distance>` (:math:`L_\infty`); the
+Chebyshev distance is also exposed as its own ``metric`` value so callers do
+not have to pass a very large ``degree``. In addition, HDBSCAN supports the
+:ref:`Cosine distance <alg_cosine_distance>` for angular data.
+
+The ``kd_tree`` and ``ball_tree`` methods support the Minkowski (Manhattan,
+Euclidean, general :math:`L_p`) and Chebyshev distances -- tree pruning relies
+on the triangle inequality of an :math:`L_p` metric. The Cosine distance is
+only supported with the ``brute_force`` method; requesting Cosine with
+``kd_tree`` or ``ball_tree`` raises :expr:`invalid_argument`.
+
+HDBSCAN consists of the following steps:
+
+**(1) Core distance computation:**
+For each point :math:`x_i`, the core distance is the distance to its
+:math:`k`-th nearest neighbor, where :math:`k` = ``min_samples``:
+
+.. math::
+   d_{\text{core}}(x_i) = d(x_i, \text{NN}_k(x_i))
+
+**(2) Mutual Reachability Distance (MRD):**
+The mutual reachability distance between any two points :math:`x_i` and :math:`x_j` is defined as:
+
+.. math::
+   d_{\text{mrd}}(x_i, x_j) = \max\{d_{\text{core}}(x_i),\; d_{\text{core}}(x_j),\; d(x_i, x_j)\}
+
+This metric upweights sparse regions, making the algorithm robust to varying densities.
+
+**(3) Minimum Spanning Tree (MST):**
+Construct the minimum spanning tree of the complete graph where each observation
+is a vertex and edge weights are mutual reachability distances.
+
+**(4) Condensed cluster tree:**
+Convert the MST into a dendrogram (hierarchical clustering), then condense it by
+removing splits where one of the child clusters has fewer than ``min_cluster_size``
+points. Points that fall out of clusters during condensation are potential noise points.
+
+**(5) Cluster extraction (Excess of Mass):**
+Using the Excess of Mass (EOM) method [Campello2013]_, compute the stability of each
+cluster in the condensed tree, then select the set of clusters that maximizes total
+stability. Selected clusters provide the flat clustering output.
+
+With ``cluster_selection_method = leaf`` the leaves of the condensed cluster tree
+are selected instead. The root is not a leaf of that tree, so a condensed tree
+that never splits into two clusters of ``min_cluster_size`` observations selects
+nothing and the whole dataset is noise.
+
+The root cluster is a candidate for EOM only when ``allow_single_cluster`` is
+set. When it wins and is the only selected cluster, the flat clustering has no
+sibling to separate noise from signal, so an observation is kept only if the
+:math:`\lambda` at which it fell out of the tree reaches a threshold:
+:math:`1 / \texttt{cluster\_selection\_epsilon}` when an epsilon is set, and the
+root's own death :math:`\lambda` otherwise, which keeps only the observations
+that persist to the very end.
+
+Each cluster gets a unique identifier, an integer from :math:`0` to
+:math:`\text{cluster\_count} - 1`. Observations not belonging to any cluster
+are assigned :math:`-1` (noise).
+
+**(6) Membership probabilities (optional):**
+When the ``probabilities`` result option is requested, each observation also gets a
+membership strength in its cluster. With :math:`\lambda_i = 1 / d_i`, where
+:math:`d_i` is the mutual reachability distance at which observation :math:`x_i`
+fell out of the condensed tree, and :math:`\lambda_C^{\max}` the largest such value
+over the selected cluster :math:`C` the observation was assigned to,
+
+.. math::
+   p_i = \frac{\min(\lambda_i, \lambda_C^{\max})}{\lambda_C^{\max}}
+
+so the most persistent members of a cluster get :math:`1` and the ones that detach
+right after the cluster is born get a value close to :math:`0`. Noise observations
+get :math:`0`. A cluster that never loses an observation has
+:math:`\lambda_C^{\max} = 0`; all of its members then get :math:`1`.
+
+**(7) Single linkage tree (optional):**
+When the ``single_linkage_tree`` result option is requested, the dendrogram of
+step (4) is reported as well, before it is condensed: an
+:math:`(n - 1) \times 4` table with one row per merge in ascending distance
+order, holding ``[left, right, distance, size]``. An id below :math:`n` is an
+original observation and id :math:`n + k` is the cluster formed by row
+:math:`k`, so row :math:`n - 2` is the root and spans all :math:`n`
+observations. The table is empty when :math:`n < 2`. The ids share the table's
+floating-point type, so they are exact as long as :math:`2n` fits the mantissa:
+always in double precision, and up to :math:`n = 2^{23}` in single precision.
+A larger :math:`n` in single precision raises ``oneapi::dal::domain_error``.
+
+The dendrogram is the full hierarchy the flat clustering was cut out of, so a
+caller can re-cut it at any distance :math:`\varepsilon` and obtain the
+clustering DBSCAN would produce at that :math:`\varepsilon` -- keeping the
+merges below the cut and labelling the resulting components -- without running
+the algorithm again.
+
+
+.. _hdbscan_c_math_brute_force:
+
+Computation method: *brute_force*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The brute-force method computes the full :math:`n \times n` pairwise distance matrix
+using the selected metric, then uses this matrix for core distance computation
+and MST construction via Boruvka's algorithm. Euclidean and Cosine distances are
+GEMM-accelerated; other metrics use element-wise computation.
+
+- **Core distances**: For each row of the distance matrix, find the :math:`k`-th
+  nearest distance using partial sort. Parallelized across rows.
+- **MST**: Boruvka's algorithm with :math:`O(n^2 \log n)` worst-case complexity,
+  using precomputed MRD matrix. The per-round nearest-neighbor search is
+  parallelized across all points.
+- **Complexity**: :math:`O(n^2 p)` for distances + :math:`O(n^2 \log n)` for MST.
+- **Memory**: :math:`O(n^2)` for the distance matrix.
+
+
+.. _hdbscan_c_math_kd_tree:
+
+Computation method: *kd_tree*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The k-d tree method avoids the :math:`O(n^2)` distance matrix by building a k-d tree
+data structure over the input data and using it for both core distance computation
+and MST construction via Boruvka's algorithm. Supports Euclidean, Manhattan,
+Minkowski, and Chebyshev metrics (Cosine is not supported).
+
+- **Core distances**: For each point, perform a k-NN query on the k-d tree.
+  Complexity: :math:`O(n \cdot k \cdot \log n)`.
+- **MST**: Boruvka's algorithm with k-d tree-accelerated nearest-different-component
+  queries, using three-level pruning (component, bounding-box MRD lower bound,
+  near/far child ordering). Complexity: :math:`O(n \log^2 n)`.
+- **Memory**: :math:`O(n \cdot p)` for k-d tree nodes and bounding boxes.
+
+The k-d tree method is significantly faster for moderate-sized datasets,
+especially in low-to-moderate dimensions (:math:`p \leq 20`).
+
+
+.. _hdbscan_c_math_ball_tree:
+
+Computation method: *ball_tree*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ball tree method is similar to the k-d tree method but uses hypersphere
+(ball) bounding volumes instead of axis-aligned bounding boxes. This provides
+better pruning in higher-dimensional spaces where k-d tree splitting planes
+become ineffective.
+
+- **Core distances**: For each point, perform a k-NN query on the ball tree.
+  Complexity: :math:`O(n \cdot k \cdot \log n)`.
+- **MST**: Boruvka's algorithm with ball-tree-accelerated nearest-different-component
+  queries, using hypersphere distance bounds for pruning.
+  Complexity: :math:`O(n \log^2 n)`.
+- **Memory**: :math:`O(n \cdot p)` for ball tree nodes, centers, and radii.
+
+The ball tree method is preferred over k-d tree when the number of features
+exceeds approximately 20, as it maintains effective pruning regardless of
+dimensionality.
+
+
+.. _hdbscan_c_math_gpu:
+
+Computation on GPU
+~~~~~~~~~~~~~~~~~~
+
+On GPU, the three methods share one implementation that builds the exact
+minimum spanning tree; as on CPU, only ``brute_force`` also divides the core
+distances by ``alpha``. Each call takes one of two paths:
+
+- The :math:`n \times n` matrix path described for *brute_force*, used for the
+  Cosine distance, and for the other metrics when :math:`p \geq 16` and the
+  matrix and its work buffers fit in half of the device memory.
+- Otherwise, a bounding-box tree over the k-d ordered observations, searched
+  exactly for the core distances and in every Boruvka round. For
+  ``min_samples`` above 256 the core distances come from a blocked brute-force
+  k-NN search instead, whose block size is ``distance_block_size``.
+
+Cosine raises ``oneapi::dal::domain_error`` when the matrix does not fit on the device.
+Cluster extraction runs on the host.
+
+
+---------------------
+Programming Interface
+---------------------
+
+Refer to :ref:`API Reference: HDBSCAN <api_hdbscan>`.
+
+--------
+Examples
+--------
+
+.. include:: ../../../includes/clustering/hdbscan-examples.rst
+
+----------
+References
+----------
+
+.. [Campello2013] Campello, R.J.G.B., Moulavi, D., Sander, J.
+   *Density-Based Clustering Based on Hierarchical Density Estimates*.
+   Advances in Knowledge Discovery and Data Mining, 2013.

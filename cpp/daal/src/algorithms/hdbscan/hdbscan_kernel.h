@@ -1,0 +1,157 @@
+/* file: hdbscan_kernel.h */
+/*******************************************************************************
+* Copyright contributors to the oneDAL project
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*******************************************************************************/
+
+#ifndef __HDBSCAN_KERNEL_H__
+#define __HDBSCAN_KERNEL_H__
+
+#include "src/algorithms/kernel.h"
+#include "src/algorithms/service_kernel_math.h"
+#include "src/services/cpu_type.h"
+#include "data_management/data/numeric_table.h"
+
+using daal::data_management::NumericTable;
+using daal::internal::CpuType;
+
+namespace daal
+{
+namespace algorithms
+{
+namespace hdbscan
+{
+namespace internal
+{
+
+/// Available methods of the HDBSCAN algorithm. HDBSCAN is exposed only through the oneAPI
+/// interface, so the method tag stays internal.
+enum class Method
+{
+    bruteForceDense = 0, ///< Brute-force method with full distance matrix
+    kdTree          = 1, ///< K-d tree method: O(N log N) neighbor search, no N^2 distance matrix
+    ballTree        = 2  ///< Ball tree method: hypersphere-based partitioning, robust to high dimensions
+};
+
+/// HDBSCAN batch kernel: core distances -> MST under mutual reachability distance -> dendrogram
+/// -> condensed tree -> cluster selection -> labels.
+///
+/// @tparam algorithmFPType Floating-point type used for distances and lambdas
+/// @tparam method          One of `bruteForceDense`, `kdTree`, `ballTree`
+/// @tparam cpu             CPU dispatch tag
+template <typename algorithmFPType, Method method, CpuType cpu>
+class HDBSCANBatchKernel : public Kernel
+{
+public:
+    /// Compute HDBSCAN clustering for the specified input data and parameters.
+    ///
+    /// @param[in]  ntData                  Input numeric table of size `N x P` containing the data to cluster
+    /// @param[out] ntAssignments           Output numeric table of size `N x 1` containing the cluster assignment
+    ///                                     for each input point. -1 indicates noise; non-negative values are the
+    ///                                     cluster index in `[0, C)`, where `C` is the number of clusters found
+    /// @param[out] ntNClusters             Output numeric table of size `1 x 1` containing the number of clusters `C` found
+    /// @param[out] ntProbabilities         Optional output numeric table of size `N x 1` containing the membership
+    ///                                     strength of each point in the cluster it was assigned to, in `[0, 1]`.
+    ///                                     Noise points get 0. Pass `nullptr` to skip the computation
+    /// @param[out] ntSingleLinkageTree     Optional output numeric table of size `(N - 1) x 4` receiving the
+    ///                                     single-linkage dendrogram, one row per merge in ascending distance
+    ///                                     order: `[left, right, distance, size]`. Ids below `N` are original
+    ///                                     points, id `N + k` is the cluster formed by row `k`. Pass `nullptr`
+    ///                                     to skip it. Left untouched when `N < 2`, where there is no merge
+    /// @param[in]  minClusterSize          Minimum number of points required to form a cluster
+    /// @param[in]  minSamples              Number of neighbors used when computing core distances
+    /// @param[in]  pairwiseDistance        Distance metric used for pairwise distances (see `algorithms::internal::PairwiseDistanceType`)
+    /// @param[in]  minkowskiDegree         Exponent `p` for the Minkowski distance. Ignored for other metrics
+    /// @param[in]  clusterSelection        Cluster selection strategy: 0 -- excess of mass, 1 -- leaf
+    /// @param[in]  allowSingleCluster      If true, allow the root cluster of the condensed tree to be selected
+    /// @param[in]  clusterSelectionEpsilon Distance threshold below which clusters are merged
+    /// @param[in]  maxClusterSize          Maximum allowed cluster size (only used with cluster selection epsilon). 0 disables the limit
+    /// @param[in]  alpha                   Robust single-linkage scaling factor (distances are divided by alpha)
+    /// @param[in]  leafSize                Maximum number of points per leaf in the kd-tree / ball-tree. Ignored for brute force
+    ///
+    /// @return Status code
+    services::Status compute(const NumericTable * ntData, NumericTable * ntAssignments, NumericTable * ntNClusters, NumericTable * ntProbabilities,
+                             NumericTable * ntSingleLinkageTree, size_t minClusterSize, size_t minSamples,
+                             algorithms::internal::PairwiseDistanceType pairwiseDistance = algorithms::internal::PairwiseDistanceType::euclidean,
+                             double minkowskiDegree = 2.0, int clusterSelection = 0, bool allowSingleCluster = false,
+                             double clusterSelectionEpsilon = 0.0, size_t maxClusterSize = 0, double alpha = 1.0, size_t leafSize = 40);
+};
+
+/// Cluster centers in scikit-learn's definitions, computed from a finished labeling.
+///
+/// @tparam algorithmFPType Floating-point type of the data
+/// @tparam cpu             CPU dispatch tag
+template <typename algorithmFPType, CpuType cpu>
+class HDBSCANCentersKernel : public Kernel
+{
+public:
+    /// Compute the probability-weighted centroid and/or the medoid of every cluster.
+    ///
+    /// The medoid of a cluster is the member `i` minimizing `sum_j dist(i, j) * weight_j` over its
+    /// members `j` in the fitted metric; ties go to the lowest row. Empty clusters get zero rows.
+    ///
+    /// @param[in]  ntData           Input numeric table of size `N x P`
+    /// @param[in]  ntAssignments    Cluster id per point, `N x 1`; -1 is noise
+    /// @param[in]  ntWeights        Membership probability per point, `N x 1`
+    /// @param[in]  nClusters        Number of clusters `C`
+    /// @param[out] ntCentroids      Centroids, `C x P`; pass `nullptr` to skip
+    /// @param[out] ntMedoids        Medoids, `C x P`; pass `nullptr` to skip
+    /// @param[in]  pairwiseDistance Distance metric of the fit
+    /// @param[in]  minkowskiDegree  Exponent `p` for the Minkowski distance
+    ///
+    /// @return Status code
+    services::Status compute(const NumericTable * ntData, const NumericTable * ntAssignments, const NumericTable * ntWeights, size_t nClusters,
+                             NumericTable * ntCentroids, NumericTable * ntMedoids, algorithms::internal::PairwiseDistanceType pairwiseDistance,
+                             double minkowskiDegree);
+};
+
+/// Cluster extraction from a finished MST: the same labeling, probabilities and single linkage
+/// tree as `HDBSCANBatchKernel`, for backends that build the MST elsewhere.
+///
+/// @tparam algorithmFPType Floating-point type of the edge weights
+/// @tparam cpu             CPU dispatch tag
+template <typename algorithmFPType, CpuType cpu>
+class HDBSCANExtractClustersKernel : public Kernel
+{
+public:
+    /// Sort the MST and extract the flat clusters from it.
+    ///
+    /// @param[in]  ntMstFrom               Source endpoint of each MST edge, `(N - 1) x 1`, any order
+    /// @param[in]  ntMstTo                 Target endpoint of each MST edge, `(N - 1) x 1`
+    /// @param[in]  ntMstWeights            Mutual reachability weight of each MST edge, `(N - 1) x 1`
+    /// @param[in]  nRows                   Number of points `N`
+    /// @param[out] ntAssignments           Cluster id per point, `N x 1`; -1 is noise
+    /// @param[out] ntNClusters             Number of clusters, `1 x 1`
+    /// @param[out] ntProbabilities         Membership strength per point, `N x 1`; pass `nullptr` to skip
+    /// @param[out] ntSingleLinkageTree     Dendrogram, `(N - 1) x 4`; pass `nullptr` to skip
+    /// @param[in]  minClusterSize          Minimum number of points required to form a cluster
+    /// @param[in]  clusterSelection        Cluster selection strategy: 0 -- excess of mass, 1 -- leaf
+    /// @param[in]  allowSingleCluster      If true, allow the root cluster of the condensed tree to be selected
+    /// @param[in]  clusterSelectionEpsilon Distance threshold below which clusters are merged
+    /// @param[in]  maxClusterSize          Maximum allowed cluster size; 0 disables the limit
+    ///
+    /// @return Status code; `ErrorIncorrectIndex` for an endpoint outside `[0, N)` and
+    ///         `ErrorIncorrectInputNumericTable` for a non-finite weight
+    services::Status compute(const NumericTable * ntMstFrom, const NumericTable * ntMstTo, const NumericTable * ntMstWeights, size_t nRows,
+                             NumericTable * ntAssignments, NumericTable * ntNClusters, NumericTable * ntProbabilities,
+                             NumericTable * ntSingleLinkageTree, size_t minClusterSize, int clusterSelection, bool allowSingleCluster,
+                             double clusterSelectionEpsilon, size_t maxClusterSize);
+};
+
+} // namespace internal
+} // namespace hdbscan
+} // namespace algorithms
+} // namespace daal
+
+#endif // __HDBSCAN_KERNEL_H__
