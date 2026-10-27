@@ -22,8 +22,8 @@ examples/      @maria-Petrova @Alexandr-Solovev @Vika-F @ethanglaser @icfaust @d
 # Build & dev infrastructure
 make*          @Alexandr-Solovev #yellow
 cmake/         @Alexandr-Solovev #yellow
-deploy/        @homksei @ahuber21 @ethanglaser #yellow
-dev/           @homksei @ahuber21 @ethanglaser #yellow
+deploy/        @homksei @ethanglaser #yellow
+dev/           @homksei @ethanglaser #yellow
 dev/bazel/     @Alexandr-Solovev #yellow
 MODULE.bazel*  @Alexandr-Solovev @napetrov @homksei @ahuber21 @ethanglaser @icfaust #yellow
 
