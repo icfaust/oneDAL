@@ -42,6 +42,37 @@ constexpr DAAL_INT64 MAX_PART_COEFFICIENT = 256l;
 // The maximal value of the minSizeCoefficient hyperparameter
 constexpr DAAL_INT64 MAX_SIZE_COEFFICIENT = 0x100000l;
 
+/// Tree engine hyperparameters (dtrees/engine/tree_builder.h, TreeParams), with the engine's defaults; each id is
+/// optional. legacyTraining selects the legacy kernels, kept until the new engine is validated against them.
+struct EngineHyperparameters
+{
+    // chunkRows: smaller chunks pay only for wide rows (thousands of features) with fewer trees than threads; for
+    // narrower rows or more trees, a chunk's planes and their reduction cost more than its rows save. Kept independent
+    // of the thread count, as regression sums depend on the chunk count.
+    DAAL_INT64 denseThreshold = 2;
+    DAAL_INT64 chunkRows      = 1 << 14;
+    DAAL_INT64 maxChunks      = 64;
+    DAAL_INT64 treesInFlight  = 0; // 0: no limit
+    bool legacyTraining       = false;
+};
+
+/// Reads the ids that are set over the defaults; a set value out of range gives ErrorHyperparameterBadValue.
+template <typename HyperparameterType, typename IdType>
+services::Status readEngineHyperparameters(const HyperparameterType * hp, IdType denseThresholdId, IdType chunkRowsId, IdType maxChunksId,
+                                           IdType treesInFlightId, IdType legacyTrainingId, EngineHyperparameters & out)
+{
+    if (!hp) return services::Status();
+    DAAL_INT64 v = 0;
+    if (hp->find(denseThresholdId, v)) out.denseThreshold = v;
+    if (hp->find(chunkRowsId, v)) out.chunkRows = v;
+    if (hp->find(maxChunksId, v)) out.maxChunks = v;
+    if (hp->find(treesInFlightId, v)) out.treesInFlight = v;
+    if (hp->find(legacyTrainingId, v)) out.legacyTraining = v != 0;
+    if (out.denseThreshold < 0 || out.chunkRows < 0 || out.maxChunks < 1 || out.treesInFlight < 0)
+        return services::Status(services::ErrorHyperparameterBadValue);
+    return services::Status();
+}
+
 } // namespace internal
 
 namespace classification
@@ -63,7 +94,13 @@ enum HyperparameterId
     smallNClassesThreshold = 0,
     minPartCoefficient     = 1,
     minSizeCoefficient     = 2,
-    hyperparameterIdCount  = 3
+    // Tree engine (decision_forest::internal::EngineHyperparameters); optional.
+    denseThreshold        = 3,
+    chunkRows             = 4,
+    maxChunks             = 5,
+    treesInFlight         = 6,
+    legacyTraining        = 7,
+    hyperparameterIdCount = 8
 };
 
 enum DoubleHyperparameterId
@@ -148,9 +185,15 @@ namespace internal
  */
 enum HyperparameterId
 {
-    minPartCoefficient    = 0,
-    minSizeCoefficient    = 1,
-    hyperparameterIdCount = 2
+    minPartCoefficient = 0,
+    minSizeCoefficient = 1,
+    // Tree engine (decision_forest::internal::EngineHyperparameters); optional.
+    denseThreshold        = 2,
+    chunkRows             = 3,
+    maxChunks             = 4,
+    treesInFlight         = 5,
+    legacyTraining        = 6,
+    hyperparameterIdCount = 7
 };
 
 enum DoubleHyperparameterId
