@@ -198,9 +198,9 @@ def _create_required_any_symlinks(repo_ctx, root, entries, what, substitutions=N
     For a set of files that are individually optional but collectively required:
     the MKL CPU dispatch kernels, where which ISA families a release ships
     changes between versions but a layout with the classic libraries and no
-    kernel at all is broken -- `libmkl_core.so.2` is only the dispatcher, so the
-    first classic-MKL call dies with `Cannot load libmkl_avx512.so.2 or
-    libmkl_def.so.2`. Failing in the repository rule names the package; failing
+    kernel at all is broken -- `libmkl_core.so.3` is only the dispatcher, so the
+    first classic-MKL call dies with `Cannot load libmkl_avx512.so.3 or
+    libmkl_def.so.3`. Failing in the repository rule names the package; failing
     at run time names a kernel the user never asked for.
     """
     if not entries:
