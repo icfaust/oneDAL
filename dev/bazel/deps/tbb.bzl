@@ -16,31 +16,31 @@
 
 load("@onedal//dev/bazel:repos.bzl", "repos")
 
-_VERSION = "2023.0.0"
+_VERSION = "2023.2.0"
 
 tbb_repo = repos.prebuilt_libs_repo_rule(
     root_env_var = "TBBROOT",
     archives = [
         repos.archive(
-            url = "https://files.pythonhosted.org/packages/aa/d2/9a994ce9b18182b04783282eba77e236d23919acf42a886d72fe14fc78a4/tbb-{}-py2.py3-none-manylinux_2_28_x86_64.whl".format(_VERSION),
-            sha256 = "482f57656386ea14b96e8da36b3fcc4cd880834ef0f328ba09e8e2e3c639285e",
+            url = "https://files.pythonhosted.org/packages/59/fd/8ca476c7b2513b1e64e08d3f5404c8ed19b34d0213000b5e23b3a91676c2/tbb-{}-py2.py3-none-manylinux_2_28_x86_64.whl".format(_VERSION),
+            sha256 = "7d80615b6e970f11671fa05b6eaa9483ac864fbfe525ac280271a78b37870b7c",
             strip_prefix = "tbb-{}.data/data".format(_VERSION),
         ),
         repos.archive(
-            url = "https://files.pythonhosted.org/packages/3d/ce/3f7551583ad858dc6d6b8a6b34f1843db3887879677cb772fdc6101aaa1a/tbb_devel-{}-py2.py3-none-manylinux_2_28_x86_64.whl".format(_VERSION),
-            sha256 = "612eb3f7dd2096868ac9907c9e3fb2246f8d0fe88a7c5531163e5c4515bf801b",
+            url = "https://files.pythonhosted.org/packages/1b/8e/b1c0f027f6907c2e4963d7ba853c87ca90781a14389cec8375a0d8a6d55c/tbb_devel-{}-py2.py3-none-manylinux_2_28_x86_64.whl".format(_VERSION),
+            sha256 = "83d004c948614a3d36c10e19e10f9620eeee927cc68cee29442b94ec609e31d0",
             strip_prefix = "tbb_devel-{}.data/data".format(_VERSION),
         ),
     ],
     win_archives = [
         repos.archive(
-            url = "https://files.pythonhosted.org/packages/7a/f8/dd5e1d9955c91ebd301d855232163750489b20ea5a8c4e40954269493dcc/tbb-{}-py3-none-win_amd64.whl".format(_VERSION),
-            sha256 = "82d1c2b4b6881d5b4f2e67288ca1c864f54e3cd82c7e428aaf912aa30ab21d01",
+            url = "https://files.pythonhosted.org/packages/d0/41/2aeac799ab57e81898c8cc24f503fe301e12f19758bb1fe34d522764d3bb/tbb-{}-py3-none-win_amd64.whl".format(_VERSION),
+            sha256 = "b39121cbdaff350fc61a448766cbb26807c523491d66e364838c9feeb3c6a0eb",
             strip_prefix = "tbb-{}.data/data/Library".format(_VERSION),
         ),
         repos.archive(
-            url = "https://files.pythonhosted.org/packages/db/da/07298ded5d56686fce1e0123730d6a5e288f7951863beb4fcc0214ad8ed0/tbb_devel-{}-py3-none-win_amd64.whl".format(_VERSION),
-            sha256 = "acc9df3c4f60b662dcd1fa27f72e40580201f30931fb8bd7336c603c8f4f1664",
+            url = "https://files.pythonhosted.org/packages/91/3e/f6aa800f22976484abe75469d45cb3756d1f786de4b299859c6c587cd792/tbb_devel-{}-py3-none-win_amd64.whl".format(_VERSION),
+            sha256 = "1655eb481004cadd2dbfdd98e98f43513a73a7f45c42076e6fc0f2abd424a459",
             strip_prefix = "tbb_devel-{}.data/data/Library".format(_VERSION),
         ),
     ],
